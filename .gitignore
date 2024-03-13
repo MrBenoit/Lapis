@@ -1,0 +1,15 @@
+.env
+.DS_Store
+/extensions/OOD
+/extensions/Music
+/extensions/Fun/events.py
+/.idea
+/__pycache__
+/core/checker.py
+/core/chat_history.json
+/core/chat_history_4.json
+/.vscode
+/images
+/Docks
+config.py
+/extensions/Fun
