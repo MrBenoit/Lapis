@@ -1,50 +1,48 @@
 # Lapis
 ## Version - 0.3.36
 ## "You are missing something?"
-> ### Contact me
-> #### Discord - mrbenoit00
-> #### Telegram - @mrbenoit
-### 
-> 
-> ------------
-> 
-> ### Development environment
-> #### Pycharm Professional
->   - Version - 2023.2.5
->   - Theme - One Dark Vivid Italic
->       - Atom Material Icons
->   - Plugins 
->     - Big Data Tools
->     - Discord Integration
->     - Database Tool and SQL
->     - WakaTime
->     - Ruff
->     - ChatGPT - EasyCode
->     - Rainbow Brackets
->     - MyPy
->     - TODO
-> #### Visual Studio Code
->   - Version - 1.84.2 Universal 
->   - Theme - Material Theme Palenight High Contrast
-> #### OS 
->   - Macbook Air 2020 M1 13 inch
->   - MacOS Sonoma
-> ### Hosting
-> #### OS
->   - Ubuntu 20.04.6 LTS
-> #### Configuration
->   - CPU - Ryzen 9 3900
->   - RAM - 8 GB
->   - M.2 SSD - 120 GB
-> #### Database
->   - PostgresSQL 16
 
-> / - Slash command 
-> 
-> U - User command
+### 
+ 
+ ------------
+ 
+ ### Development environment
+ #### Pycharm Professional
+   - Version - 2023.2.5
+   - Theme - One Dark Vivid Italic
+       - Atom Material Icons
+   - Plugins 
+     - Big Data Tools
+     - Discord Integration
+     - Database Tool and SQL
+     - WakaTime
+     - Ruff
+     - ChatGPT - EasyCode
+     - Rainbow Brackets
+     - MyPy
+     - TODO
+ #### Visual Studio Code
+   - Version - 1.84.2 Universal 
+   - Theme - Material Theme Palenight High Contrast
+ #### OS 
+   - Macbook Air 2020 M1 13 inch
+   - MacOS Sonoma
+ ### Hosting
+ #### OS
+   - Ubuntu 20.04.6 LTS
+ #### Configuration
+   - CPU - Ryzen 9 3900
+   - RAM - 8 GB
+   - M.2 SSD - 120 GB
+ #### Database
+   - PostgresSQL 16
+
+ / - Slash command 
+ 
+ U - User command
 
 ## Level
-> `5 * user.level ** 2) + (50 * user.level) + 100` - formula
+ `5 * user.level ** 2) + (50 * user.level) + 100` - formula
 
 `/` `rank` - return user level, exp, etc. (.png)
 
