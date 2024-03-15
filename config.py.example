@@ -1,0 +1,10 @@
+# For music
+
+NODES = [
+    {
+        "host": "IP",
+        "port": 2333,
+        "label": "",
+        "password": "",
+    }
+]
