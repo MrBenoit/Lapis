@@ -2,7 +2,6 @@ import locale
 import os
 import traceback
 import disnake
-from disnake.ext.commands import InteractionBot
 from dotenv import load_dotenv
 
 from overwritten import LapisBot
@@ -11,35 +10,32 @@ load_dotenv()
 locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
 
 
-bot = InteractionBot(
-    intents=disnake.Intents.all(),
-    owner_id=1004649810323845142,
-    allowed_mentions=disnake.AllowedMentions(
-        users=True,
-        everyone=True,
-        roles=True,
-        replied_user=True,
-    ),
-)
+def main() -> None:
+    bot = LapisBot(
+        intents=disnake.Intents.all(),
+        owner_id=1004649810323845142,
+        allowed_mentions=disnake.AllowedMentions(
+            users=True,
+            everyone=True,
+            roles=True,
+            replied_user=True,
+        ),
+    )
 
-local_path = [
-    "extensions/Leveling",
-    "extensions/Info",
-    "extensions/Statistic",
-    "extensions/PrivateChannels",
-    "extensions/Utils",
-    "extensions/Fun/Actions",
-    "extensions/Fun/Casino",
-    "extensions/Fun/Emotions",
-    "extensions/Fun",
-    "extensions/Setup",
-    "extensions/Economy",
-    "extensions/Moderation",
-    "extensions/ReportSystem",
-    "extensions",
-]
+    local_path = [
+        "extensions/Leveling",
+        "extensions/Info",
+        "extensions/Statistic",
+        "extensions/PrivateChannels",
+        "extensions/Utils",
+        "extensions/Economy/Casino/",
+        "extensions/Setup",
+        "extensions/Economy",
+        "extensions/Moderation",
+        "extensions/ReportSystem",
+        "extensions",
+    ]
 
-if __name__ == "__main__":
     for current_path in local_path:
         for extension in disnake.utils.search_directory(f"{current_path}"):
             try:
@@ -52,8 +48,11 @@ if __name__ == "__main__":
                 )
                 print(errors)
 
-bot.run(os.getenv("DISCORD_BOT_TOKEN"))
+    bot.run(os.getenv("DISCORD_BOT_TOKEN"))
 
+
+if __name__ == "__main__":
+    main()
 
 # @bot.slash_command(
 #     description="Загрузить модуль",

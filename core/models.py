@@ -111,3 +111,9 @@ class Guilds(Base):
     prem_time: Mapped[DateTime] = mapped_column(DateTime)
     report_channel_id: Mapped[int] = mapped_column(BigInteger)
     report_message_id: Mapped[int] = mapped_column(BigInteger)
+    commands_language: Mapped[int] = mapped_column(
+        String, nullable=False, default="English"
+    )
+    description_language: Mapped[int] = mapped_column(
+        String, nullable=False, default="Russian"
+    )
