@@ -139,14 +139,20 @@ def mask_circle_transparent(pil_img, blur_radius, offset=0):
 
 
 async def getRankCard(guild: disnake.Guild, member: disnake.Member):
-    fonts = {
-        "CLEANVEL": ImageFont.truetype("../LapisBot/fonts/CLEANVEL.ttf", 25),
-        "NotoSans": ImageFont.truetype("../LapisBot/fonts/NotoSans-Regular.ttf", 55),
-        "istok": ImageFont.truetype("../LapisBot/fonts/istok-regular.ttf", 25),
-        "calibri": ImageFont.truetype("../LapisBot/fonts/calibri.ttf", 48),
-    }
-
     user = await userDB(guild, member)
+
+    fonts = {
+        "nunitoLightSmallText": ImageFont.truetype(
+            "../LapisBot/fonts/Nunito-Light.ttf", 25
+        ),
+        "nunitoLightLevelTop": ImageFont.truetype(
+            "../LapisBot/fonts/Nunito-Light.ttf", 55
+        ),
+        "nunitoLightScore": ImageFont.truetype(
+            "../LapisBot/fonts/Nunito-Light.ttf", 25
+        ),
+        "nunitoLightName": ImageFont.truetype("../LapisBot/fonts/Nunito-Light.ttf", 48),
+    }
 
     card_images = [
         "../LapisBot/images/banners/rank_card.png",
@@ -200,46 +206,54 @@ async def getRankCard(guild: disnake.Guild, member: disnake.Member):
 
     xp_number = f"{user.exp} / {total_score} ({round(procent * 100, 2)}%)"
 
-    idraw.text((189, 15), name, font=fonts["calibri"])
-    idraw.text((215, 104), "ур.", font=fonts["CLEANVEL"])
-    idraw.text((250, 124), str(user.level), font=fonts["NotoSans"], anchor="ls")
+    idraw.text((189, 15), name, font=fonts["nunitoLightName"])
+    idraw.text((215, 96), "ур.", font=fonts["nunitoLightSmallText"])
+    idraw.text(
+        (250, 124), str(user.level), font=fonts["nunitoLightLevelTop"], anchor="ls"
+    )
 
     level_text = str(my_top)
     if user.level in range(1, 9):
         idraw.text(
-            (300 + (len(level_text) - 1) * 25, 104), "топ", font=fonts["CLEANVEL"]
+            (300 + (len(level_text) - 1) * 25, 96),
+            "топ",
+            font=fonts["nunitoLightSmallText"],
         )
         idraw.text(
             (350 + (len(level_text) - 1) * 45, 124),
             f"#{level_text}",
-            font=fonts["NotoSans"],
+            font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
     elif user.level in range(10, 99):
         idraw.text(
-            (320 + (len(level_text) - 1) * 35, 104), "топ", font=fonts["CLEANVEL"]
+            (320 + (len(level_text) - 1) * 35, 96),
+            "топ",
+            font=fonts["nunitoLightSmallText"],
         )
         idraw.text(
             (360 + (len(level_text) - 1) * 55, 124),
             f"#{level_text}",
-            font=fonts["NotoSans"],
+            font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
     elif user.level in range(100, 999):
         idraw.text(
-            (350 + (len(level_text) - 1) * 45, 104), "топ", font=fonts["CLEANVEL"]
+            (350 + (len(level_text) - 1) * 45, 96),
+            "топ",
+            font=fonts["nunitoLightSmallText"],
         )
         idraw.text(
             (390 + (len(level_text) - 1) * 65, 124),
             f"#{level_text}",
-            font=fonts["NotoSans"],
+            font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
 
     idraw.ellipse((189, 129, 229, 168), fill=color)
     idraw.line(line, fill=color, width=40)
     idraw.ellipse(eclimpse, fill=color)
-    idraw.text((489, 152), xp_number, font=fonts["istok"], anchor="mm")
+    idraw.text((489, 148), xp_number, font=fonts["nunitoLightScore"], anchor="mm")
 
     buffer = BytesIO()
     image.save(buffer, "png", optimize=True)
