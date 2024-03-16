@@ -3,7 +3,7 @@ from io import BytesIO
 
 import asyncpg
 import disnake
-import emoji
+
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from sqlalchemy import and_
 from sqlalchemy import select
@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import *
 from core.messages import *
 from core.vars import *
-from core.languages import *
 
 
 async def defaultMemberChecker(interaction, member: disnake.Member) -> bool:
