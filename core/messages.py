@@ -12,7 +12,7 @@ async def maxLevel():
 
 
 async def banWords(message: str):
-    mats_files = ["core/russian_mats.txt", "core/english_mats.txt"]
+    mats_files = ["core/banwords/russian_mats.txt", "core/banwords/english_mats.txt"]
     for file_path in mats_files:
         with open(file_path, "r", encoding="utf-8") as f:
             if any(word.strip().lower() in message.lower() for word in f):
