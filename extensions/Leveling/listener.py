@@ -50,8 +50,8 @@ class ExpAdder(commands.Cog):
                     update(Users)
                     .where(and_(Users.user_id == author.id, Users.guild_id == guild.id))
                     .values(
-                        level=db[0].level + 1,
-                        exp=db[0].exp - user_exp,
+                        level=Users.level + 1,
+                        exp=Users.exp - user_exp,
                     )
                 )
                 await session2.commit()
