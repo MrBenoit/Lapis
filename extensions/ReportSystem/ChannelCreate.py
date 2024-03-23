@@ -12,6 +12,32 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from core import *
 
 
+class CloseTicketButtons(disnake.ui.View):
+    def __init__(self, buttonAuthor: disnake.Member):
+        super().__init__(timeout=60)
+        self.buttonAuthor = buttonAuthor
+
+    @disnake.ui.button(
+        label="Закрыть тикет",
+        custom_id="report_button_close_ticket",
+        style=disnake.ButtonStyle.red,
+        emoji="❌",
+        row=1,
+    )
+    async def TakeTickerButton(
+        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        async with AsyncSession(engine) as session:
+            await session.execute(
+                update(Guilds)
+                .where(Guilds.guild_id == interaction.guild.id)
+                .values(report_ticket_channel_id=interaction.channel.id)
+            )
+            await session.commit()
+
+        await interaction.channel.delete()
+
+
 class TicketButtons(disnake.ui.View):
     def __init__(self, buttonAuthor: disnake.Member):
         super().__init__(timeout=60)
@@ -21,12 +47,13 @@ class TicketButtons(disnake.ui.View):
         label="Забрать тикет",
         custom_id="report_button_take_ticket",
         style=disnake.ButtonStyle.green,
+        emoji="🟢",
         row=1,
     )
     async def TakeTickerButton(
         self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        db_guild = await insertDatabase(interaction.author, interaction.guild)
+        db_guild = await database(interaction.author)
 
         if not list(
             set(db_guild[1].admin_roles_ids).intersection(
@@ -70,39 +97,14 @@ class TicketButtons(disnake.ui.View):
             colour=EmbedColor.MAIN_COLOR.value,
         )
 
+        embed_edited_ticket = disnake.Embed(
+            title="Тикет активен", color=EmbedColor.MAIN_COLOR.value
+        )
+
         await interaction.response.send_message(embed=embed_admin_take_ticket)
-        await interaction.message.edit()
-        await interaction.response.defer()
-
-    @disnake.ui.button(
-        label="Закрыть тикет",
-        custom_id="report_button_take_ticket",
-        style=disnake.ButtonStyle.green,
-        row=1,
-    )
-    async def CloseTicketButton(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        db_guild = await insertDatabase(interaction.author, interaction.guild)
-
-        if not list(
-            set(db_guild[1].admin_roles_ids).intersection(
-                set([ids.id for ids in interaction.author.roles])
-            )
-        ):
-            embed = await accessDeniedCustom("У вас нет ни одной админ-роли")
-            embed.add_field(
-                name="> Способы решения",
-                value=f"```- Получить админ-роль \n"
-                f"- Указать админ-роли на [сайте]{'https://discord.gg'} в раздела 'Администрирование', "
-                f"если вы администратор/владелец этой гильдии```",
-                inline=False,
-            )
-            await interaction.send(embed=embed, ephemeral=True, delete_after=15)
-            return
-
-        channel = interaction.guild.get_channel(interaction.channel.id)
-        await channel.delete()
+        await interaction.message.edit(
+            embed=embed_edited_ticket, view=CloseTicketButtons(self.buttonAuthor)
+        )
 
 
 class ReportSystem(commands.Cog):
@@ -137,9 +139,48 @@ class ReportSystem(commands.Cog):
                 description="Опишите подробно вашу проблему",
                 color=EmbedColor.MAIN_COLOR.value,
             )
+
+            async with AsyncSession(engine) as session:
+                await session.execute(
+                    update(Guilds)
+                    .where(Guilds.guild_id == interaction.guild.id)
+                    .values(report_ticket_channel_id=channel.id)
+                )
+                await session.commit()
+
             await channel.send(
                 embed=embed_in_ticket, view=TicketButtons(interaction.author)
             )
+            return
+        if interaction.component.custom_id == "report_button_voice":
+            try:
+                interaction.author.voice.channel.id
+            except AttributeError:
+                embed = disnake.Embed(
+                    title="Вы не находитесь в голосовом канале",
+                    description="Что бы отправить такую жалобу, Вы должны находиться в голосовом канале",
+                    color=EmbedColor.MAIN_COLOR.value,
+                )
+                await interaction.send(embed=embed, ephemeral=True, delete_after=15)
+                return
+
+            async with AsyncSession(engine) as session:
+                channel = await session.scalar(
+                    select(Guilds.report_notif_channel_id).where(
+                        Guilds.guild_id == interaction.guild.id
+                    )
+                )
+
+            channel = interaction.guild.get_channel(channel)
+            if channel is None:
+                return
+
+            embed = disnake.Embed(
+                title="Голосовая жалоба",
+                description=f"Поступила из канала <#{interaction.author.voice.channel.id}>",
+                color=EmbedColor.MAIN_COLOR.value,
+            )
+            await channel.send(embed=embed)
 
 
 def setup(bot):

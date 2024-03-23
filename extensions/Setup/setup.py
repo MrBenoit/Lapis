@@ -14,182 +14,6 @@ from core.vars import *
 from core.models import *
 
 
-class GuildStatsChannelType(disnake.ui.View):
-    def __init__(self, bot, buttonAuthor: disnake.Member):
-        super().__init__(timeout=60)
-        self.bot = bot
-        self.buttonAuthor = buttonAuthor
-
-    async def interaction_check(self, interaction: disnake.Interaction):
-        if interaction.author.id != self.buttonAuthor.id:
-            embed = await accessDeniedButton(self.buttonAuthor)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return False
-        return True
-
-    @disnake.ui.button(
-        label="Текстовые каналы", style=disnake.ButtonStyle.secondary, row=1
-    )
-    async def StatsChannelsTypeText(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        return
-
-    @disnake.ui.button(
-        label="Голосовые каналы", style=disnake.ButtonStyle.secondary, row=1
-    )
-    async def StatsChannelsTypeVoice(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        everyone = interaction.guild.default_role
-        members = len(interaction.guild.members)
-        boosts = interaction.guild.premium_subscription_count
-        date = datetime.datetime.now().strftime("%d-ое %B, %A")
-
-        voice_members = 0
-        for x in interaction.guild.voice_channels + interaction.guild.stage_channels:
-            voice_members += len(x.members)
-
-        category = await interaction.guild.create_category("📊 | Статистика")
-
-        members_channel = await interaction.guild.create_voice_channel(
-            f"👥│{members:,}", category=category, position=0
-        )
-        boosts_channel = await interaction.guild.create_voice_channel(
-            f"🚀│{boosts}", category=category
-        )
-        voice_members_channel = await interaction.guild.create_voice_channel(
-            f"🎤│{voice_members}", category=category
-        )
-        date_channel = await interaction.guild.create_voice_channel(
-            f"📅│{date}", category=category
-        )
-
-        async with AsyncSession(engine) as session:
-            await session.execute(
-                update(Guilds)
-                .where(Guilds.guild_id == interaction.guild.id)
-                .values(
-                    member_stats_channel_id=members_channel.id,
-                    boosts_stats_channel_id=boosts_channel.id,
-                    voice_members_channel_id=voice_members_channel.id,
-                    date_channel_id=date_channel.id,
-                )
-            )
-            await session.commit()
-
-        await members_channel.set_permissions(everyone, speak=False, connect=False)
-        await boosts_channel.set_permissions(everyone, speak=False, connect=False)
-        await voice_members_channel.set_permissions(
-            everyone, speak=False, connect=False
-        )
-        await date_channel.set_permissions(everyone, speak=False, connect=False)
-
-        embed = disnake.Embed(
-            title="Вы создали категорию каналов статистики",
-            description="",
-            color=0xA1A1A1,
-        )
-        embed.add_field(
-            name="Созданные каналы",
-            value=f"{members_channel.jump_url} \n"
-            f"{boosts_channel.jump_url} \n"
-            f"{voice_members_channel.jump_url} \n"
-            f"{date_channel.jump_url}",
-            inline=True,
-        )
-        await interaction.edit_original_response(embed=embed)
-
-    @disnake.ui.button(label="Трибуны", style=disnake.ButtonStyle.secondary, row=1)
-    async def StatsChannelsTypeStage(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        return
-
-    @disnake.ui.button(
-        label="Назад", style=disnake.ButtonStyle.blurple, emoji="⬅️", row=2
-    )
-    async def SetupBack(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        embed = disnake.Embed(
-            title="Включить дополнительные функции",
-            description="",
-            colour=EmbedColor.MAIN_COLOR.value,
-        )
-
-        await interaction.response.edit_message(
-            embed=embed, view=VoiceStatsSetupButtons(self.bot, self.buttonAuthor)
-        )
-
-
-class VoiceStatsSetupButtons(disnake.ui.View):
-    def __init__(self, bot, buttonAuthor: disnake.Member):
-        super().__init__(timeout=60)
-        self.bot = bot
-        self.buttonAuthor = buttonAuthor
-
-    async def interaction_check(self, interaction: disnake.Interaction):
-        if interaction.author.id != self.buttonAuthor.id:
-            embed = await accessDeniedButton(self.buttonAuthor)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return False
-        return True
-
-    @disnake.ui.button(
-        label="Выбрать тип каналов",
-        style=disnake.ButtonStyle.secondary,
-        emoji="🔊",
-        row=1,
-    )
-    async def selectChannelsType(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        embed = disnake.Embed(
-            title="Управление функцией **Статистика гильдии через каналы**",
-            description="После нажатия на выбранную кнопку создадутся каналы выбранного вами типа",
-            colour=EmbedColor.MAIN_COLOR.value,
-        )
-        embed.add_field(
-            name="Заметка:",
-            value="При нажатии на любую из кнопок ниже, кроме кнопки **Назад**,"
-            "будет создана категория с каналами выбранного вами типа \n\n"
-            "Но прошлые каналы, если они были, будут удалены.",
-            inline=False,
-        )
-        await interaction.response.defer()
-        await interaction.message.edit(
-            embed=embed, view=GuildStatsChannelType(self.bot, self.buttonAuthor)
-        )
-
-    @disnake.ui.button(
-        label="Добавить другие каналы со статистикой",
-        style=disnake.ButtonStyle.secondary,
-        emoji="📊",
-        row=1,
-    )
-    async def MoreStatsChannels(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        return
-
-    @disnake.ui.button(
-        label="Назад", style=disnake.ButtonStyle.blurple, emoji="⬅️", row=2
-    )
-    async def SetupBack_2(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        embed = disnake.Embed(
-            title="Включить дополнительные функции",
-            description="",
-            colour=EmbedColor.MAIN_COLOR.value,
-        )
-
-        await interaction.response.edit_message(
-            embed=embed, view=SettingsButtons(self.bot, self.buttonAuthor)
-        )
-
-
 class SettingsButtons(disnake.ui.View):
     def __init__(self, bot, buttonAuthor: disnake.Member):
         super().__init__(timeout=60)
@@ -282,13 +106,69 @@ class SettingsButtons(disnake.ui.View):
     ):
         await interaction.response.defer()
         embed = disnake.Embed(
-            title="Управление функцией **Статистика гильдии через каналы**",
+            title="Добавить каналы статистики",
             description="",
             colour=EmbedColor.MAIN_COLOR.value,
         )
-        await interaction.message.edit(
-            embed=embed, view=VoiceStatsSetupButtons(self.bot, self.buttonAuthor)
+
+        everyone = interaction.guild.default_role
+        members = len(interaction.guild.members)
+        boosts = interaction.guild.premium_subscription_count
+        date = datetime.datetime.now().strftime("%d-ое %B, %A")
+
+        voice_members = 0
+        for x in interaction.guild.voice_channels + interaction.guild.stage_channels:
+            voice_members += len(x.members)
+
+        category = await interaction.guild.create_category("📊 | Статистика")
+
+        members_channel = await interaction.guild.create_voice_channel(
+            f"👥│{members:,}", category=category, position=0
         )
+        boosts_channel = await interaction.guild.create_voice_channel(
+            f"🚀│{boosts}", category=category
+        )
+        voice_members_channel = await interaction.guild.create_voice_channel(
+            f"🎤│{voice_members}", category=category
+        )
+        date_channel = await interaction.guild.create_voice_channel(
+            f"📅│{date}", category=category
+        )
+
+        async with AsyncSession(engine) as session:
+            await session.execute(
+                update(Guilds)
+                .where(Guilds.guild_id == interaction.guild.id)
+                .values(
+                    member_stats_channel_id=members_channel.id,
+                    boosts_stats_channel_id=boosts_channel.id,
+                    voice_members_channel_id=voice_members_channel.id,
+                    date_channel_id=date_channel.id,
+                )
+            )
+            await session.commit()
+
+        await members_channel.set_permissions(everyone, speak=False, connect=False)
+        await boosts_channel.set_permissions(everyone, speak=False, connect=False)
+        await voice_members_channel.set_permissions(
+            everyone, speak=False, connect=False
+        )
+        await date_channel.set_permissions(everyone, speak=False, connect=False)
+
+        embed = disnake.Embed(
+            title="Вы создали категорию каналов статистики",
+            description="",
+            color=0xA1A1A1,
+        )
+        embed.add_field(
+            name="Созданные каналы",
+            value=f"{members_channel.jump_url} \n"
+            f"{boosts_channel.jump_url} \n"
+            f"{voice_members_channel.jump_url} \n"
+            f"{date_channel.jump_url}",
+            inline=True,
+        )
+        await interaction.edit_original_response(embed=embed)
 
     @disnake.ui.button(
         label="Включить систему репортов",

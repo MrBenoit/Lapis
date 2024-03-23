@@ -61,9 +61,7 @@ class User_global(Base):
     vk_url: Mapped[str] = mapped_column(
         String, default="https://vk.com/", nullable=False
     )
-    tg_url: Mapped[str] = mapped_column(
-        String, default="https://t.me/", nullable=False
-    )
+    tg_url: Mapped[str] = mapped_column(String, default="https://t.me/", nullable=False)
     inst_url: Mapped[str] = mapped_column(
         String, default="https://www.instagram.com/", nullable=False
     )
@@ -111,3 +109,5 @@ class Guilds(Base):
     prem_time: Mapped[DateTime] = mapped_column(DateTime)
     report_channel_id: Mapped[int] = mapped_column(BigInteger)
     report_message_id: Mapped[int] = mapped_column(BigInteger)
+    report_notif_channel_id: Mapped[int] = mapped_column(BigInteger)
+    report_ticket_channel_id: Mapped[int] = mapped_column(ARRAY(BigInteger))
