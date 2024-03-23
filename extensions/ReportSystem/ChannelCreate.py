@@ -31,7 +31,7 @@ class CloseTicketButtons(disnake.ui.View):
             await session.execute(
                 update(Guilds)
                 .where(Guilds.guild_id == interaction.guild.id)
-                .values(report_ticket_channel_id=interaction.channel.id)
+                .values(report_ticket_channel_id=None)
             )
             await session.commit()
 
