@@ -2,11 +2,11 @@
 .DS_Store
 /extensions/OOD
 /extensions/Music
-/extensions/Fun/events.py
+/extensions/fun/events.py
 /.idea
 /__pycache__
 /.vscode
 /images
 /Docks
 config.py
-/extensions/Fun
+/extensions/fun

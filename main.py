@@ -23,16 +23,16 @@ def main() -> None:
     )
 
     local_path = [
-        "extensions/Leveling",
-        "extensions/Info",
-        "extensions/Statistic",
-        "extensions/PrivateChannels",
-        "extensions/Utils",
-        "extensions/Economy/Casino/",
-        "extensions/Setup",
-        "extensions/Economy",
-        "extensions/Moderation",
-        "extensions/ReportSystem",
+        "extensions/level",
+        "extensions/info",
+        "extensions/stats",
+        "extensions/private_channels",
+        "extensions/utils",
+        "extensions/eco/Casino/",
+        "extensions/setup",
+        "extensions/eco",
+        "extensions/moder",
+        "extensions/report_system",
         "extensions",
     ]
 
