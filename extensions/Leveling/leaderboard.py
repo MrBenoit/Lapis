@@ -8,23 +8,10 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 
-from core.vars import *
-from core.models import *
-from core.checker import *
-from core.vars import EmbedEmoji
-from core.vars import EmbedColor
-
-CARD_NAME = {
-    0: "Стандартная карточка рейтинга",
-    1: "Зеленый космос",
-    2: "Фиолетовая материя",
-    3: "Крепкая любовь",
-}
-
-SELECT = ["по уровню", "по монетам"]
+from core import *
 
 
-async def CurrencyLeaderboard(user, users_top_list):
+async def CurrencyLeaderboard(user, users_top_list) -> disnake.Embed:
     top = [i.user_id for i in users_top_list]
     my_rank = top.index(user.user_id) + 1
     top_rank = {1: "🥇", 2: "🥈", 3: "🥉"}
@@ -55,7 +42,7 @@ async def CurrencyLeaderboard(user, users_top_list):
     return embed
 
 
-async def LevelLeaderboard(user, users_top_list):
+async def LevelLeaderboard(user, users_top_list) -> disnake.Embed:
     top = [i.user_id for i in users_top_list]
     my_rank = top.index(user.user_id) + 1
     top_rank = {1: "🥇", 2: "🥈", 3: "🥉"}
@@ -88,7 +75,7 @@ async def LevelLeaderboard(user, users_top_list):
 
 
 class Leaderboard(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     @commands.slash_command(description="Ваша карточка рейтинга")
@@ -96,7 +83,7 @@ class Leaderboard(commands.Cog):
         self,
         interaction: disnake.ApplicationCommandInteraction,
         lbType: str = commands.Param(name="таблица", choices=SELECT),
-    ):
+    ) -> None:
         if await defaultMemberChecker(interaction, interaction.author) is False:
             return
 

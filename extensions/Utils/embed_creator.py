@@ -61,7 +61,7 @@ class ChannelSendModal(disnake.ui.Modal):
         except AttributeError:
             await accessDeniedCustom("Вы указали несуществующий канал")
             return
-
+                                                                    
         if channel.guild.id != interaction.author.id:
             embed = await accessDeniedCustom(
                 "Вы не можете отправить эмбед в эту гильдию"

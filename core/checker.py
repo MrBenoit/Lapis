@@ -7,6 +7,7 @@ import disnake
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from sqlalchemy import and_
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.models import *
@@ -14,7 +15,7 @@ from core.messages import *
 from core.vars import *
 
 
-async def defaultMemberChecker(interaction, member: disnake.Member) -> bool:
+async def defaultMemberChecker(interaction, member) -> bool:
     if member.bot:
         return False
 
@@ -23,6 +24,7 @@ async def defaultMemberChecker(interaction, member: disnake.Member) -> bool:
 
     if not interaction.channel.permissions_for(interaction.author).send_messages:
         return False
+    return True
 
 
 async def database(member: disnake.Member):
@@ -43,21 +45,25 @@ async def database(member: disnake.Member):
     return [user, guild, globalUser]
 
 
-async def levelUpChannel(guild: disnake.Guild):
+async def levelUpChannel(guild: disnake.Guild) -> int | None:
     async with AsyncSession(engine) as session:
-        channel = await session.scalar(
+        channel_id = await session.scalar(
             select(Guilds.level_up_channel).where(Guilds.guild_id == guild.id)
         )
-        return channel
+        return channel_id
 
 
 async def guildDB(
     guild: disnake.Guild,
 ):
-    async with AsyncSession(engine) as session:
-        queryGuild = await session.scalar(
-            select(Guilds).where(Guilds.guild_id == guild.id)
-        )
+    try:
+        async with AsyncSession(engine) as session:
+            queryGuild = await session.scalar(
+                select(Guilds).where(Guilds.guild_id == guild.id)
+            )
+    except IntegrityError as e:
+        print(f"Ошибка уникальности: {e}")
+        pass
 
     if not queryGuild:
         async with AsyncSession(engine) as session:
@@ -72,12 +78,16 @@ async def guildDB(
 
 
 async def userDB(guild: disnake.Guild, member: disnake.Member):
-    async with AsyncSession(engine) as session:
-        queryUser = await session.scalar(
-            select(Users).where(
-                and_(Users.user_id == member.id, Users.guild_id == guild.id)
+    try:
+        async with AsyncSession(engine) as session:
+            queryUser = await session.scalar(
+                select(Users).where(
+                    and_(Users.user_id == member.id, Users.guild_id == guild.id)
+                )
             )
-        )
+    except IntegrityError as e:
+        print(f"Ошибка уникальности: {e}")
+        pass
 
     if not queryUser:
         async with AsyncSession(engine) as session:
@@ -101,12 +111,16 @@ async def globalUsersDB(member: disnake.Member):
     )
     embed_json = json.dumps(embed.to_dict())
 
-    async with AsyncSession(engine) as session:
-        userGlobal = await session.scalar(
-            select(User_global).where(
-                User_global.user_id == member.id,
+    try:
+        async with AsyncSession(engine) as session:
+            userGlobal = await session.scalar(
+                select(User_global).where(
+                    User_global.user_id == member.id,
+                )
             )
-        )
+    except IntegrityError as e:
+        print(f"Ошибка уникальности: {e}")
+        pass
 
     if not userGlobal:
         async with AsyncSession(engine) as session:

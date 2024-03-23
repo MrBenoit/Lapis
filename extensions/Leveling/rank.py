@@ -13,18 +13,16 @@ class Rank(commands.Cog):
         self,
         interaction: disnake.ApplicationCommandInteraction,
         member: disnake.Member = commands.Param(name="пользователь", default=None),
-    ):
-        target = None
-        if member is None or member == interaction.author:
-            target = interaction.author
-        elif member.id != interaction.author.id:
+    ) -> None:
+        
+        target = interaction.author
+        if member is not None:
             target = member
 
-        if await defaultMemberChecker(interaction, target) is False:
+        if await defaultMemberChecker(interaction=interaction, member=target) is False:
             return
 
-        user = interaction.author or member
-        file = await getRankCard(interaction.guild, user)
+        file = await getRankCard(guild=member.guild, member=target)
         await interaction.response.send_message(file=file)
 
 

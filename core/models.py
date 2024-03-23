@@ -59,16 +59,16 @@ class User_global(Base):
 
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     vk_url: Mapped[str] = mapped_column(
-        String[32], default="https://vk.com/", nullable=False
+        String, default="https://vk.com/", nullable=False
     )
     tg_url: Mapped[str] = mapped_column(
-        String[32], default="https://t.me/", nullable=False
+        String, default="https://t.me/", nullable=False
     )
     inst_url: Mapped[str] = mapped_column(
-        String[32], default="https://www.instagram.com/", nullable=False
+        String, default="https://www.instagram.com/", nullable=False
     )
     select_color: Mapped[str] = mapped_column(
-        String[10], default="0x383E54", nullable=False
+        String, default="0x383E54", nullable=False
     )
     donate: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     cards: Mapped[List[int]] = mapped_column(

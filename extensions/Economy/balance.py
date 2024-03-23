@@ -13,11 +13,11 @@ class Balance(commands.Cog):
         self,
         interaction: disnake.ApplicationCommandInteraction,
         member: disnake.Member = commands.Param(name="пользователь", default=None),
-    ):
-        target = None
-        if member is None or member == interaction.author:
-            target = interaction.author
-        elif member.id != interaction.author.id:
+    ) -> None:
+        
+        target = interaction.author
+
+        if member is not None:
             target = member
 
         if await defaultMemberChecker(interaction, target) is False:
@@ -38,7 +38,7 @@ class Balance(commands.Cog):
         embed = disnake.Embed(
             color=EmbedColor.MAIN_COLOR.value,
         )
-        embed.set_author(name=target.name, icon_url=target.avatar.url)
+        embed.set_author(name=target.name, icon_url=target.avatar.url) # type: ignore
         embed.add_field(
             name=f"> {EmbedEmoji.SILVER_COIN.value} Серебряные монеты",
             value=f"```{authorDB.currency:,}```",

@@ -20,7 +20,7 @@ class ExpAdder(commands.Cog):
         if message.author.bot:
             return
 
-        elif len(f"{message.content}") < 5:
+        elif len(message.content) < 5:
             return
 
         author = message.author
