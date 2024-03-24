@@ -77,10 +77,10 @@ class SettingsButtons(disnake.ui.View):
                 .where(Guilds.guild_id == interaction.guild.id)
                 .values(
                     p_channel_ids=text(
-                        f"array_append({Guilds.p_channel_ids}, :channel\:\:bigint)"
+                        f"array_append({Guilds.p_channel_ids}, :channel_id\:\:bigint)"
                     )
                 ),
-                {"channel": main_channel.id},
+                {"channel_id": main_channel.id},
             )
             await session.commit()
 

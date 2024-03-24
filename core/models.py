@@ -52,6 +52,7 @@ class Users(Base):
         ARRAY(BigInteger), default=[], nullable=False
     )
     p_channel_id: Mapped[int] = mapped_column(BigInteger)
+    report_ticket_channel_id: Mapped[int] = mapped_column(BigInteger)
 
 
 class User_global(Base):
@@ -110,4 +111,3 @@ class Guilds(Base):
     report_channel_id: Mapped[int] = mapped_column(BigInteger)
     report_message_id: Mapped[int] = mapped_column(BigInteger)
     report_notif_channel_id: Mapped[int] = mapped_column(BigInteger)
-    report_ticket_channel_id: Mapped[int] = mapped_column(ARRAY(BigInteger))

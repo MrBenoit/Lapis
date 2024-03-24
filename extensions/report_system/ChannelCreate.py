@@ -7,7 +7,7 @@ from sqlalchemy import and_
 from sqlalchemy import insert, text
 from sqlalchemy import update, ARRAY
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import array
 
 from core import *
 
@@ -29,8 +29,13 @@ class CloseTicketButtons(disnake.ui.View):
     ):
         async with AsyncSession(engine) as session:
             await session.execute(
-                update(Guilds)
-                .where(Guilds.guild_id == interaction.guild.id)
+                update(Users)
+                .where(
+                    and_(
+                        Users.user_id == interaction.author.id,
+                        Users.guild_id == interaction.guild.id,
+                    )
+                )
                 .values(report_ticket_channel_id=None)
             )
             await session.commit()
@@ -114,17 +119,57 @@ class ReportSystem(commands.Cog):
     @commands.Cog.listener("on_button_click")
     async def ReportButtonsTrigger(self, interaction: disnake.MessageInteraction):
         if interaction.component.custom_id == "report_button_text":
-            async with AsyncSession(engine) as session:
-                channel = await session.scalar(
-                    select(Guilds.report_channel_id).where(
-                        Guilds.guild_id == interaction.guild.id
+            db = await database(interaction.author)
+
+            if db[0].report_ticket_channel_id is not None:
+                channel_id = interaction.guild.get_channel(
+                    db[0].report_ticket_channel_id
+                )
+                if channel_id is None:
+                    async with AsyncSession(engine) as session:
+                        await session.execute(
+                            update(Users)
+                            .where(
+                                and_(
+                                    Users.user_id == interaction.author.id,
+                                    Users.guild_id == interaction.guild.id,
+                                )
+                            )
+                            .values(report_ticket_channel_id=None)
+                        )
+                        await session.commit()
+                else:
+                    embed_err = disnake.Embed(
+                        title="Вы уже создали тикет", color=EmbedColor.MAIN_COLOR.value
                     )
+                    await interaction.response.send_message(
+                        embed=embed_err, ephemeral=True, delete_after=15
+                    )
+                    return
+
+            async with AsyncSession(engine) as session:
+                guild_db = await session.scalar(
+                    select(Guilds).where(Guilds.guild_id == interaction.guild.id)
                 )
 
-            channel = interaction.guild.get_channel(channel)
+            channel = interaction.guild.get_channel(guild_db.report_channel_id)
             channel = await channel.category.create_text_channel(
                 f"🟢│{interaction.author.name}"
             )
+
+            await channel.set_permissions(
+                interaction.guild.default_role,
+                read_messages=False,
+            )
+
+            for role_id in guild_db.admin_roles_ids:
+                await channel.set_permissions(
+                    interaction.guild.get_role(role_id),
+                    read_messages=True,
+                    send_messages=True,
+                    attach_files=True,
+                )
+
             embed_create_ticket = disnake.Embed(
                 title="Вы создали тикет",
                 description=channel.jump_url,
@@ -135,23 +180,29 @@ class ReportSystem(commands.Cog):
             )
 
             embed_in_ticket = disnake.Embed(
-                title="Тикет открыт1",
+                title="Тикет открыт!",
                 description="Опишите подробно вашу проблему",
                 color=EmbedColor.MAIN_COLOR.value,
             )
 
             async with AsyncSession(engine) as session:
                 await session.execute(
-                    update(Guilds)
-                    .where(Guilds.guild_id == interaction.guild.id)
+                    update(Users)
+                    .where(
+                        and_(
+                            Users.user_id == interaction.author.id,
+                            Users.guild_id == interaction.guild.id,
+                        )
+                    )
                     .values(report_ticket_channel_id=channel.id)
                 )
                 await session.commit()
 
             await channel.send(
-                embed=embed_in_ticket, view=TicketButtons(interaction.author)
+                embed=embed_in_ticket, view=TicketButtons(interaction.author)  # type: ignore
             )
             return
+
         if interaction.component.custom_id == "report_button_voice":
             try:
                 interaction.author.voice.channel.id
@@ -181,6 +232,13 @@ class ReportSystem(commands.Cog):
                 color=EmbedColor.MAIN_COLOR.value,
             )
             await channel.send(embed=embed)
+
+            embed_channel = disnake.Embed(
+                title="Жалоба отправлена", color=EmbedColor.MAIN_COLOR.value
+            )
+            await interaction.channel.send(
+                embed=embed_channel, ephemeral=True, delete_after=15
+            )
 
 
 def setup(bot):
