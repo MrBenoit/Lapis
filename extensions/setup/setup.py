@@ -246,9 +246,22 @@ class Settings(commands.Cog):
         if await defaultMemberChecker(interaction, interaction.author) is False:
             return
 
-        if interaction.author.id != interaction.guild.owner.id:
-            err_embed = await accessDeniedNotOwner(interaction.guild.owner)
-            await interaction.response.send_message(embed=err_embed, ephemeral=True)
+        db = await database(interaction.author)
+
+        if not list(
+            set(db[1].admin_roles_ids).intersection(
+                set([ids[1].id for ids in interaction.author.roles])
+            )
+        ):
+            embed = await accessDeniedCustom("У вас нет ни одной-админ роли")
+            embed.add_field(
+                name="> Способы решения",
+                value=f"```- Получить админ-роль \n"
+                f"- Указать админ-роли на [сайте]{'https://discord.gg'} в раздела 'Администрирование', "
+                f"если вы администратор/владелец этой гильдии```",
+                inline=False,
+            )
+            await interaction.send(embed=embed, ephemeral=True, delete_after=15)
             return
 
         embed = disnake.Embed(

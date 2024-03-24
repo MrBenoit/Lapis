@@ -136,7 +136,7 @@ async def globalUsersDB(member: disnake.Member):
     return userGlobal
 
 
-async def getRankCard(guild: disnake.Guild, member: disnake.Member):
+async def getRankCard(guild: disnake.Guild, member: disnake.Member) -> disnake.File:
     user = await userDB(guild, member)
 
     fonts = {
