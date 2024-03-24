@@ -14,7 +14,7 @@ from core import *
 
 class CloseTicketButtons(disnake.ui.View):
     def __init__(self, buttonAuthor: disnake.Member):
-        super().__init__(timeout=60)
+        super().__init__(timeout=None)
         self.buttonAuthor = buttonAuthor
 
     @disnake.ui.button(
@@ -45,7 +45,7 @@ class CloseTicketButtons(disnake.ui.View):
 
 class TicketButtons(disnake.ui.View):
     def __init__(self, buttonAuthor: disnake.Member):
-        super().__init__(timeout=60)
+        super().__init__(timeout=None)
         self.buttonAuthor = buttonAuthor
 
     @disnake.ui.button(
