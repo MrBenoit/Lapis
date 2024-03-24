@@ -136,21 +136,6 @@ async def globalUsersDB(member: disnake.Member):
     return userGlobal
 
 
-def mask_circle_transparent(pil_img, blur_radius, offset=0):
-    offset = blur_radius * 2 - offset
-    mask = Image.new("L", pil_img.size, 0)
-    draw = ImageDraw.Draw(mask)
-    draw.ellipse(
-        (offset, offset, pil_img.size[0] - offset, pil_img.size[1] - offset), fill=255
-    )
-    mask = mask.filter(ImageFilter.GaussianBlur(blur_radius))
-
-    result = pil_img.copy()
-    result.putalpha(mask)
-
-    return result
-
-
 async def getRankCard(guild: disnake.Guild, member: disnake.Member):
     user = await userDB(guild, member)
 
@@ -169,19 +154,11 @@ async def getRankCard(guild: disnake.Guild, member: disnake.Member):
 
     card_images = [
         "../LapisBot/images/banners/rank_card.png",
-        "../LapisBot/images/banners/rank_card_prem1.png",
-        "../LapisBot/images/banners/rank_card_prem2.png",
-        "../LapisBot/images/banners/rank_card_prem3.png",
-        "../LapisBot/images/banners/rank_card_prem4.png",
     ]
 
     image = Image.open(card_images[user.select_card])
     color = [
-        (145, 145, 145),
-        (77, 165, 168),
-        (95, 62, 194),
-        (196, 47, 39),
-        (77, 82, 130),
+        (181, 181, 181),
     ][user.select_card]
 
     async with AsyncSession(engine) as session:
@@ -204,23 +181,33 @@ async def getRankCard(guild: disnake.Guild, member: disnake.Member):
         avatar = member.avatar.with_format("png")
         data = BytesIO(await avatar.read())
 
-        pfp = Image.open(data)
-        pfp = pfp.resize((145, 145))
-        pfp = mask_circle_transparent(pfp, 0)
-        image.paste(pfp, (34, 24), pfp)
+        pfp = Image.open(data).convert("RGBA")
+        pfp = pfp.resize((140, 140))
+
+        mask = Image.new("L", (140, 140), 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0) + (140, 140), fill=255)
+
+        avatar_rounded = Image.new("RGBA", (140, 140), (255, 255, 255, 0))
+        avatar_rounded.paste(pfp, (0, 0), mask)
+
+        image.paste(avatar_rounded, (40, 30), avatar_rounded)
 
     total_score = 5 * (user.level**2) + (50 * user.level) + 100
 
     procent = user.exp / total_score
-    pos = round(procent * 620 + 209)
-    line = [209, 148, min(pos, 810), 148] if pos < 810 else [206, 148, 791, 148]
-    ec1, ec2 = pos - 20, pos + 20 if pos < 810 else 790
-    eclimpse = [ec1, 129, ec2, 168] if pos < 810 else [770, 129, 810, 168]
+    pos = round(procent * 620 + 210)
+    if pos <= 295:
+        idraw.ellipse((210, 130, 250, 169), fill=color)
+    else:
+        idraw.rounded_rectangle(
+            (210, 130, min(pos, 830), 169), width=40, fill=color, radius=40
+        )
 
     xp_number = f"{user.exp} / {total_score} ({round(procent * 100, 2)}%)"
 
-    idraw.text((189, 15), name, font=fonts["nunitoLightName"])
-    idraw.text((215, 96), "ур.", font=fonts["nunitoLightSmallText"])
+    idraw.text((220, 15), name, font=fonts["nunitoLightName"])
+    idraw.text((220, 96), "ур.", font=fonts["nunitoLightSmallText"])
     idraw.text(
         (250, 124), str(user.level), font=fonts["nunitoLightLevelTop"], anchor="ls"
     )
@@ -245,27 +232,24 @@ async def getRankCard(guild: disnake.Guild, member: disnake.Member):
             font=fonts["nunitoLightSmallText"],
         )
         idraw.text(
-            (360 + (len(level_text) - 1) * 55, 124),
+            (365 + (len(level_text) - 1) * 55, 124),
             f"#{level_text}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
-    elif user.level in range(100, 999):
+    elif user.level in range(100, 1000):
         idraw.text(
             (350 + (len(level_text) - 1) * 45, 96),
             "топ",
             font=fonts["nunitoLightSmallText"],
         )
         idraw.text(
-            (390 + (len(level_text) - 1) * 65, 124),
+            (395 + (len(level_text) - 1) * 55, 124),
             f"#{level_text}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
 
-    idraw.ellipse((189, 129, 229, 168), fill=color)
-    idraw.line(line, fill=color, width=40)
-    idraw.ellipse(eclimpse, fill=color)
     idraw.text((489, 148), xp_number, font=fonts["nunitoLightScore"], anchor="mm")
 
     buffer = BytesIO()
