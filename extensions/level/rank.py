@@ -15,7 +15,10 @@ class Rank(commands.Cog):
         member: disnake.Member = commands.Param(name="пользователь", default=None),
     ) -> None:
 
-        target = interaction.author or member
+        if member is None:
+            target = interaction.author
+        else:
+            target = member
 
         if await defaultMemberChecker(interaction=interaction, member=target) is False:
             return

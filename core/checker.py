@@ -3,6 +3,7 @@ from io import BytesIO
 
 import asyncpg
 import disnake
+import datetime
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from sqlalchemy import and_
@@ -139,7 +140,7 @@ async def globalUsersDB(member: disnake.Member):
 async def getRankCard(guild: disnake.Guild, member: disnake.Member) -> disnake.File:
     user = await userDB(guild, member)
 
-    fonts = {
+    font = {
         "nunitoLightSmallText": ImageFont.truetype(
             "../LapisBot/fonts/Nunito-Light.ttf", 25
         ),
@@ -156,103 +157,198 @@ async def getRankCard(guild: disnake.Guild, member: disnake.Member) -> disnake.F
         "../LapisBot/images/banners/rank_card.png",
     ]
 
-    image = Image.open(card_images[user.select_card])
     color = [
         (181, 181, 181),
     ][user.select_card]
+    total_score = 5 * (user.level**2) + (50 * user.level) + 100
 
+    file = await drawing(user, member, font, color, total_score, card_images)
+    return file
+
+
+async def drawing(
+    user, member: disnake.Member, font, color, total_score: int, card_images
+):
+    image = Image.open(card_images[user.select_card])
+    IDraw = ImageDraw.Draw(image)
+
+    user_rank = await get_user_rank(user, member)
+    await draw_name(IDraw, font, member)
+    if member.avatar is not None:
+        await draw_avatar(image, member)
+    await draw_micro(user, IDraw, font, image)
+    percent = await draw_score_bar(user, total_score, color, IDraw)
+    await draw_text_level(user, IDraw, font, user_rank)
+    await draw_xp_score(user, IDraw, font, percent[1], total_score)
+
+    buffer = BytesIO()
+    image.save(buffer, "png", optimize=True)
+    return disnake.File(BytesIO(buffer.getvalue()), filename=f"{member.name}.png")
+
+
+async def get_user_rank(user, member: disnake.Member) -> int:
     async with AsyncSession(engine) as session:
         queryUser = await session.scalars(
             select(Users)
-            .where(and_(Users.user_id == member.id, Users.guild_id == guild.id))
+            .where(and_(Users.user_id == member.id, Users.guild_id == member.guild.id))
             .order_by(Users.level.desc())
         )
 
     top = [i.user_id for i in queryUser]
-    my_top = top.index(user.user_id) + 1
+    return top.index(user.user_id) + 1
 
-    idraw = ImageDraw.Draw(image)
 
+async def draw_name(IDraw, font, member: disnake.Member):
     name = member.display_name
     if len(name) > 20:
         name = member.display_name[:20]
+    return IDraw.text((220, 15), name, font=font["nunitoLightName"])
 
-    if member.avatar is not None:
-        avatar = member.avatar.with_format("png")
-        data = BytesIO(await avatar.read())
 
-        pfp = Image.open(data).convert("RGBA")
-        pfp = pfp.resize((140, 140))
+async def draw_avatar(image, member: disnake.Member):
+    avatar = member.avatar.with_format("png")
+    data = BytesIO(await avatar.read())
 
-        mask = Image.new("L", (140, 140), 0)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0) + (140, 140), fill=255)
+    pfp = Image.open(data).convert("RGBA")
+    pfp = pfp.resize((140, 140))
 
-        avatar_rounded = Image.new("RGBA", (140, 140), (255, 255, 255, 0))
-        avatar_rounded.paste(pfp, (0, 0), mask)
+    mask = Image.new("L", (140, 140), 0)
+    draw = ImageDraw.Draw(mask)
+    corner_radius = 40
+    draw.rounded_rectangle((0, 0, 140, 140), fill=255, radius=corner_radius)
 
-        image.paste(avatar_rounded, (40, 30), avatar_rounded)
+    avatar_rounded = Image.new("RGBA", (140, 140), (255, 255, 255, 0))
+    avatar_rounded.paste(pfp, (0, 0), mask)
 
-    total_score = 5 * (user.level**2) + (50 * user.level) + 100
+    return image.paste(avatar_rounded, (40, 30), avatar_rounded)
 
-    procent = user.exp / total_score
-    pos = round(procent * 620 + 210)
-    if pos <= 295:
-        idraw.ellipse((210, 130, 250, 169), fill=color)
-    else:
-        idraw.rounded_rectangle(
-            (210, 130, min(pos, 830), 169), width=40, fill=color, radius=40
+
+async def draw_micro(user, IDraw, fonts, image):
+    micro = Image.open("../LapisBot/images/icons/micro.png").convert("RGBA")
+    micro = micro.resize((20, 18))
+    mask = micro.split()[3]
+    hours = user.all_voice_time // 3600
+    minutes = (user.all_voice_time % 3600) // 60
+    seconds = (user.all_voice_time % 3600) % 60
+
+    voice_time = datetime.timedelta(seconds=user.all_voice_time)
+    if 1 <= user.all_voice_time <= 35999:
+        image.paste(micro, (715, 102), mask=mask)
+        IDraw.text(
+            (740, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
         )
+        return
+    if 359999 >= user.all_voice_time >= 36000:
+        image.paste(micro, (700, 102), mask=mask)
+        IDraw.text(
+            (725, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+        return
+    if 3599999 >= user.all_voice_time >= 360000:
+        image.paste(micro, (685, 102), mask=mask)
+        IDraw.text(
+            (705, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+        return
+    if 35999999 >= user.all_voice_time >= 3600000:
+        image.paste(micro, (670, 102), mask=mask)
+        IDraw.text(
+            (770, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+        return
 
-    xp_number = f"{user.exp} / {total_score} ({round(procent * 100, 2)}%)"
 
-    idraw.text((220, 15), name, font=fonts["nunitoLightName"])
-    idraw.text((220, 96), "ур.", font=fonts["nunitoLightSmallText"])
-    idraw.text(
-        (250, 124), str(user.level), font=fonts["nunitoLightLevelTop"], anchor="ls"
+async def draw_score_bar(user, total_score: int, color, IDraw):
+    percent = user.exp / total_score
+    pos = round(percent * 620 + 210)
+    if pos <= 295:
+        return [IDraw.ellipse((210, 130, 250, 169), fill=color), percent]
+    else:
+        return [
+            IDraw.rounded_rectangle(
+                (210, 130, min(pos, 830), 169), width=40, fill=color, radius=40
+            ),
+            percent,
+        ]
+
+
+async def draw_xp_score(user, IDraw, fonts, percent, total_score):
+    xp_number = f"{user.exp} / {total_score} ({round(percent * 100, 2)}%)"
+    return IDraw.text(
+        (489, 148), xp_number, font=fonts["nunitoLightScore"], anchor="mm"
     )
 
+
+async def draw_text_level(user, IDraw, fonts, my_top):
     level_text = str(my_top)
+
+    IDraw.text(
+        (260, 124), str(user.level), font=fonts["nunitoLightLevelTop"], anchor="ls"
+    )
+
+    IDraw.text((220, 96), "ур.", font=fonts["nunitoLightSmallText"])
+
     if user.level in range(1, 9):
-        idraw.text(
+        IDraw.text(
             (300 + (len(level_text) - 1) * 25, 96),
             "топ",
             font=fonts["nunitoLightSmallText"],
         )
-        idraw.text(
+        IDraw.text(
             (350 + (len(level_text) - 1) * 45, 124),
             f"#{level_text}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
+        return
+    if user.level in range(1, 9):
+        IDraw.text(
+            (300 + (len(level_text) - 1) * 25, 96),
+            "топ",
+            font=fonts["nunitoLightSmallText"],
+        )
+        IDraw.text(
+            (350 + (len(level_text) - 1) * 45, 124),
+            f"#{level_text}",
+            font=fonts["nunitoLightLevelTop"],
+            anchor="ls",
+        )
+        return
     elif user.level in range(10, 99):
-        idraw.text(
+        IDraw.text(
             (320 + (len(level_text) - 1) * 35, 96),
             "топ",
             font=fonts["nunitoLightSmallText"],
         )
-        idraw.text(
+        IDraw.text(
             (365 + (len(level_text) - 1) * 55, 124),
             f"#{level_text}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
+        return
     elif user.level in range(100, 1000):
-        idraw.text(
-            (350 + (len(level_text) - 1) * 45, 96),
+        IDraw.text(
+            (370 + (len(level_text) - 1) * 55, 96),
             "топ",
             font=fonts["nunitoLightSmallText"],
         )
-        idraw.text(
-            (395 + (len(level_text) - 1) * 55, 124),
+        IDraw.text(
+            (420 + (len(level_text) - 1) * 65, 124),
             f"#{level_text}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
-
-    idraw.text((489, 148), xp_number, font=fonts["nunitoLightScore"], anchor="mm")
-
-    buffer = BytesIO()
-    image.save(buffer, "png", optimize=True)
-    file = disnake.File(BytesIO(buffer.getvalue()), filename=f"{member.name}.png")
-    return file
+        return
