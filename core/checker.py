@@ -138,7 +138,7 @@ async def globalUsersDB(member: disnake.Member):
 
 
 async def getRankCard(guild: disnake.Guild, member: disnake.Member) -> disnake.File:
-    user = await userDB(guild, member)
+    user = await database(member)
 
     font = {
         "nunitoLightSmallText": ImageFont.truetype(
@@ -159,10 +159,10 @@ async def getRankCard(guild: disnake.Guild, member: disnake.Member) -> disnake.F
 
     color = [
         (181, 181, 181),
-    ][user.select_card]
-    total_score = 5 * (user.level**2) + (50 * user.level) + 100
+    ][user[0].select_card]
+    total_score = 5 * (user[0].level ** 2) + (50 * user[0].level) + 100
 
-    file = await drawing(user, member, font, color, total_score, card_images)
+    file = await drawing(user[0], member, font, color, total_score, card_images)
     return file
 
 
@@ -188,11 +188,12 @@ async def drawing(
 
 async def get_user_rank(user, member: disnake.Member) -> int:
     async with AsyncSession(engine) as session:
-        queryUser = await session.scalars(
+        result = await session.execute(
             select(Users)
-            .where(and_(Users.user_id == member.id, Users.guild_id == member.guild.id))
-            .order_by(Users.level.desc())
+            .where(Users.guild_id == member.guild.id)
+            .order_by(Users.level.desc(), Users.exp.desc())
         )
+        queryUser = result.scalars().all()
 
     top = [i.user_id for i in queryUser]
     return top.index(user.user_id) + 1
@@ -231,7 +232,15 @@ async def draw_micro(user, IDraw, fonts, image):
     minutes = (user.all_voice_time % 3600) // 60
     seconds = (user.all_voice_time % 3600) % 60
 
-    voice_time = datetime.timedelta(seconds=user.all_voice_time)
+    if user.all_voice_time == 0:
+        image.paste(micro, (715, 102), mask=mask)
+        IDraw.text(
+            (740, 120),
+            f"0:00:00",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+        return
     if 1 <= user.all_voice_time <= 35999:
         image.paste(micro, (715, 102), mask=mask)
         IDraw.text(
@@ -285,14 +294,18 @@ async def draw_score_bar(user, total_score: int, color, IDraw):
 
 
 async def draw_xp_score(user, IDraw, fonts, percent, total_score):
-    xp_number = f"{user.exp} / {total_score} ({round(percent * 100, 2)}%)"
+    xp_number = f"{user.exp} / {total_score}"
+    # ({round(percent * 100, 2)}%)
     return IDraw.text(
-        (489, 148), xp_number, font=fonts["nunitoLightScore"], anchor="mm"
+        (520, 150),
+        xp_number,
+        font=fonts["nunitoLightScore"],
+        anchor="mm",
     )
 
 
 async def draw_text_level(user, IDraw, fonts, my_top):
-    level_text = str(my_top)
+    top = str(my_top)
 
     IDraw.text(
         (260, 124), str(user.level), font=fonts["nunitoLightLevelTop"], anchor="ls"
@@ -302,52 +315,39 @@ async def draw_text_level(user, IDraw, fonts, my_top):
 
     if user.level in range(1, 9):
         IDraw.text(
-            (300 + (len(level_text) - 1) * 25, 96),
+            (320, 96),
             "топ",
             font=fonts["nunitoLightSmallText"],
         )
         IDraw.text(
-            (350 + (len(level_text) - 1) * 45, 124),
-            f"#{level_text}",
-            font=fonts["nunitoLightLevelTop"],
-            anchor="ls",
-        )
-        return
-    if user.level in range(1, 9):
-        IDraw.text(
-            (300 + (len(level_text) - 1) * 25, 96),
-            "топ",
-            font=fonts["nunitoLightSmallText"],
-        )
-        IDraw.text(
-            (350 + (len(level_text) - 1) * 45, 124),
-            f"#{level_text}",
+            (370, 124),
+            f"#{top}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
         return
     elif user.level in range(10, 99):
         IDraw.text(
-            (320 + (len(level_text) - 1) * 35, 96),
+            (340, 96),
             "топ",
             font=fonts["nunitoLightSmallText"],
         )
         IDraw.text(
-            (365 + (len(level_text) - 1) * 55, 124),
-            f"#{level_text}",
+            (390, 124),
+            f"#{top}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
         return
     elif user.level in range(100, 1000):
         IDraw.text(
-            (370 + (len(level_text) - 1) * 55, 96),
+            (370, 96),
             "топ",
             font=fonts["nunitoLightSmallText"],
         )
         IDraw.text(
-            (420 + (len(level_text) - 1) * 65, 124),
-            f"#{level_text}",
+            (420, 124),
+            f"#{top}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
