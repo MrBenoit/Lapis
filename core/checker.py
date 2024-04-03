@@ -39,7 +39,7 @@ async def database(member: disnake.Member):
     [2] - GlobalUsers
     """
 
-    user = await userDB(member.guild, member)
+    user = await userDB(member)
     guild = await guildDB(member.guild)
     globalUser = await globalUsersDB(member)
 
@@ -78,27 +78,27 @@ async def guildDB(
     return queryGuild
 
 
-async def userDB(guild: disnake.Guild, member: disnake.Member):
-    try:
-        async with AsyncSession(engine) as session:
-            queryUser = await session.scalar(
-                select(Users).where(
-                    and_(Users.user_id == member.id, Users.guild_id == guild.id)
-                )
+async def userDB(member: disnake.Member):
+    async with AsyncSession(engine) as session:
+        queryUser = await session.scalar(
+            select(Users).where(
+                and_(Users.user_id == member.id, Users.guild_id == member.guild.id)
             )
-    except IntegrityError as e:
-        print(f"Ошибка уникальности: {e}")
-        pass
+        )
 
     if not queryUser:
-        async with AsyncSession(engine) as session:
-            session.add(Users(user_id=member.id, guild_id=guild.id))
-            await session.commit()
+        try:
+            async with AsyncSession(engine) as session:
+                session.add(Users(user_id=member.id, guild_id=member.guild.id))
+                await session.commit()
+        except IntegrityError as e:
+            print(f"Ошибка уникальности: {e}")
+            pass
 
         async with AsyncSession(engine) as session:
             queryUser = await session.scalar(
                 select(Users).where(
-                    and_(Users.user_id == member.id, Users.guild_id == guild.id)
+                    and_(Users.user_id == member.id, Users.guild_id == member.guild.id)
                 )
             )
     return queryUser

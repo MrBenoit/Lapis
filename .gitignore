@@ -1,12 +1,8 @@
 .env
 .DS_Store
-/extensions/OOD
-/extensions/Music
-/extensions/fun/events.py
+/extensions/fun
 /.idea
-/__pycache__
+/.venv
 /.vscode
 /images
-/Docks
 config.py
-/extensions/fun

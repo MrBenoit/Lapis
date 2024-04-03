@@ -1,10 +1,8 @@
 import disnake
 from disnake.ext import commands
-
-from core.checker import *
-from io import BytesIO
-
 import qrcode
+from core import *
+from io import BytesIO
 
 
 class QRGenerator(commands.Cog):
@@ -14,7 +12,7 @@ class QRGenerator(commands.Cog):
     @commands.slash_command(description="Создание QR кода")
     async def qr_generator(
         self,
-        inter: disnake.ApplicationCommandInteraction,
+        interaction: disnake.ApplicationCommandInteraction,
         url: str = commands.Param(name="ссылка"),
     ):
         filename = f"{url}.png"
@@ -24,7 +22,7 @@ class QRGenerator(commands.Cog):
         img.save(buffer, "png")
         file = disnake.File(BytesIO(buffer.getvalue()), filename=filename)
 
-        await inter.send(file=file, ephemeral=True)
+        await interaction.send(file=file, ephemeral=True)
 
 
 def setup(bot):

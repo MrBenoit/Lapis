@@ -29,10 +29,11 @@ def main() -> None:
         "extensions/private_channels",
         "extensions/utils",
         "extensions/eco/Casino/",
-        "extensions/setup",
+        "extensions/settings",
         "extensions/eco",
-        "extensions/moder",
+        "extensions/moderation",
         "extensions/report_system",
+        "extensions/music",
         "extensions",
     ]
 

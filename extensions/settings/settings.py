@@ -96,7 +96,7 @@ class SettingsButtons(disnake.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @disnake.ui.button(
-        label="Управление каналами статистики",
+        label="Добавить каналы статистики",
         style=disnake.ButtonStyle.secondary,
         emoji="📊",
         row=1,
@@ -105,11 +105,6 @@ class SettingsButtons(disnake.ui.View):
         self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
         await interaction.response.defer()
-        embed = disnake.Embed(
-            title="Добавить каналы статистики",
-            description="",
-            colour=EmbedColor.MAIN_COLOR.value,
-        )
 
         everyone = interaction.guild.default_role
         members = len(interaction.guild.members)
@@ -158,7 +153,7 @@ class SettingsButtons(disnake.ui.View):
         embed = disnake.Embed(
             title="Вы создали категорию каналов статистики",
             description="",
-            color=0xA1A1A1,
+            color=EmbedColor.MAIN_COLOR.value,
         )
         embed.add_field(
             name="Созданные каналы",
@@ -242,7 +237,7 @@ class Settings(commands.Cog):
         self.bot = bot
 
     @commands.slash_command(description="Управление доп. функциями")
-    async def settings(self, interaction: disnake.ApplicationCommandInteraction):
+    async def settings(self, interaction: disnake.GuildCommandInteraction):
         if await defaultMemberChecker(interaction, interaction.author) is False:
             return
 
@@ -250,7 +245,7 @@ class Settings(commands.Cog):
 
         if not list(
             set(db[1].admin_roles_ids).intersection(
-                set([ids[1].id for ids in interaction.author.roles])
+                set([ids.id for ids in interaction.author.roles])
             )
         ):
             embed = await accessDeniedCustom("У вас нет ни одной-админ роли")
