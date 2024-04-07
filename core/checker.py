@@ -177,7 +177,7 @@ async def drawing(
     if member.avatar is not None:
         await draw_avatar(image, member)
     await draw_micro(user, IDraw, font, image)
-    percent = await draw_score_bar(user, total_score, color, IDraw)
+    await draw_score_bar(user, total_score, color, IDraw)
     await draw_text_level(user, IDraw, font, user_rank)
     await draw_xp_score(user, IDraw, font, total_score)
 
@@ -233,61 +233,56 @@ async def draw_micro(user, IDraw, fonts, image):
     seconds = (user.all_voice_time % 3600) % 60
 
     if user.all_voice_time == 0:
-        image.paste(micro, (715, 102), mask=mask)
+        image.paste(micro, (755, 102), mask=mask)
         IDraw.text(
-            (740, 120),
+            (790, 120),
             f"0:00:00",
             font=fonts["nunitoLightSmallText"],
             anchor="ls",
         )
-        return
-    if 1 <= user.all_voice_time <= 35999:
-        image.paste(micro, (715, 102), mask=mask)
+    elif 1 <= user.all_voice_time <= 35999:
+        image.paste(micro, (755, 102), mask=mask)
         IDraw.text(
-            (740, 120),
+            (790, 120),
             f"{hours}:{minutes}:{seconds}",
             font=fonts["nunitoLightSmallText"],
             anchor="ls",
         )
-        return
-    if 359999 >= user.all_voice_time >= 36000:
-        image.paste(micro, (700, 102), mask=mask)
+    elif 359999 >= user.all_voice_time >= 36000:
+        image.paste(micro, (740, 102), mask=mask)
+        IDraw.text(
+            (765, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+    elif 3599999 >= user.all_voice_time >= 360000:
+        image.paste(micro, (725, 102), mask=mask)
+        IDraw.text(
+            (745, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+    elif 35999999 >= user.all_voice_time >= 3600000:
+        image.paste(micro, (710, 102), mask=mask)
         IDraw.text(
             (725, 120),
             f"{hours}:{minutes}:{seconds}",
             font=fonts["nunitoLightSmallText"],
             anchor="ls",
         )
-        return
-    if 3599999 >= user.all_voice_time >= 360000:
-        image.paste(micro, (685, 102), mask=mask)
-        IDraw.text(
-            (705, 120),
-            f"{hours}:{minutes}:{seconds}",
-            font=fonts["nunitoLightSmallText"],
-            anchor="ls",
-        )
-        return
-    if 35999999 >= user.all_voice_time >= 3600000:
-        image.paste(micro, (670, 102), mask=mask)
-        IDraw.text(
-            (770, 120),
-            f"{hours}:{minutes}:{seconds}",
-            font=fonts["nunitoLightSmallText"],
-            anchor="ls",
-        )
-        return
 
 
 async def draw_score_bar(user, total_score: int, color, IDraw):
     percent = user.exp / total_score
-    pos = round(percent * 620 + 210)
+    pos = round(percent * 660 + 210)
     if pos <= 295:
         return [IDraw.ellipse((210, 130, 250, 169), fill=color), percent]
     else:
         return [
             IDraw.rounded_rectangle(
-                (210, 130, min(pos, 830), 169), width=40, fill=color, radius=40
+                (210, 130, min(pos, 870), 169), width=40, fill=color, radius=40
             ),
             percent,
         ]
@@ -296,7 +291,7 @@ async def draw_score_bar(user, total_score: int, color, IDraw):
 async def draw_xp_score(user, IDraw, fonts, total_score):
     xp_number = f"{user.exp} / {total_score}"
     return IDraw.text(
-        (520, 150),
+        (560, 149),
         xp_number,
         font=fonts["nunitoLightScore"],
         anchor="mm",
