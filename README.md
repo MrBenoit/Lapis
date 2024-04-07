@@ -5,7 +5,7 @@
 -------------
 
 ## For users:
-Docs - https://lapisbot.ru/documentation
+Docs - https://lapisbot.ru/documentation (not worked)
 
 ## For devs:
 

@@ -57,19 +57,19 @@ async def levelUpChannel(guild: disnake.Guild) -> int | None:
 async def guildDB(
     guild: disnake.Guild,
 ):
-    try:
-        async with AsyncSession(engine) as session:
-            queryGuild = await session.scalar(
-                select(Guilds).where(Guilds.guild_id == guild.id)
-            )
-    except IntegrityError as e:
-        print(f"Ошибка уникальности: {e}")
-        pass
+    async with AsyncSession(engine) as session:
+        queryGuild = await session.scalar(
+            select(Guilds).where(Guilds.guild_id == guild.id)
+        )
 
     if not queryGuild:
-        async with AsyncSession(engine) as session:
-            session.add(Guilds(guild_id=guild.id))
-            await session.commit()
+        try:
+            async with AsyncSession(engine) as session:
+                session.add(Guilds(guild_id=guild.id))
+                await session.commit()
+        except IntegrityError as e:
+            print(f"Ошибка уникальности: {e}")
+            pass
 
         async with AsyncSession(engine) as session:
             queryGuild = await session.scalar(
@@ -112,21 +112,21 @@ async def globalUsersDB(member: disnake.Member):
     )
     embed_json = json.dumps(embed.to_dict())
 
-    try:
-        async with AsyncSession(engine) as session:
-            userGlobal = await session.scalar(
-                select(User_global).where(
-                    User_global.user_id == member.id,
-                )
+    async with AsyncSession(engine) as session:
+        userGlobal = await session.scalar(
+            select(User_global).where(
+                User_global.user_id == member.id,
             )
-    except IntegrityError as e:
-        print(f"Ошибка уникальности: {e}")
-        pass
+        )
 
     if not userGlobal:
-        async with AsyncSession(engine) as session:
-            session.add(User_global(user_id=member.id, embed_json=embed_json))
-            await session.commit()
+        try:
+            async with AsyncSession(engine) as session:
+                session.add(User_global(user_id=member.id, embed_json=embed_json))
+                await session.commit()
+        except IntegrityError as e:
+            print(f"Ошибка уникальности: {e}")
+            pass
 
         async with AsyncSession(engine) as session:
             userGlobal = await session.scalar(
@@ -137,7 +137,7 @@ async def globalUsersDB(member: disnake.Member):
     return userGlobal
 
 
-async def getRankCard(guild: disnake.Guild, member: disnake.Member) -> disnake.File:
+async def getRankCard(member: disnake.Member) -> disnake.File:
     user = await database(member)
 
     font = {
@@ -179,7 +179,7 @@ async def drawing(
     await draw_micro(user, IDraw, font, image)
     percent = await draw_score_bar(user, total_score, color, IDraw)
     await draw_text_level(user, IDraw, font, user_rank)
-    await draw_xp_score(user, IDraw, font, percent[1], total_score)
+    await draw_xp_score(user, IDraw, font, total_score)
 
     buffer = BytesIO()
     image.save(buffer, "png", optimize=True)
@@ -293,9 +293,8 @@ async def draw_score_bar(user, total_score: int, color, IDraw):
         ]
 
 
-async def draw_xp_score(user, IDraw, fonts, percent, total_score):
+async def draw_xp_score(user, IDraw, fonts, total_score):
     xp_number = f"{user.exp} / {total_score}"
-    # ({round(percent * 100, 2)}%)
     return IDraw.text(
         (520, 150),
         xp_number,

@@ -21,7 +21,7 @@ class Rank(commands.Cog):
         if await defaultMemberChecker(interaction=interaction, member=target) is False:
             return
 
-        file = await getRankCard(guild=target.guild, member=target)
+        file = await getRankCard(member=target)
         await interaction.response.send_message(file=file)
 
 
