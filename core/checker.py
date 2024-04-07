@@ -315,7 +315,7 @@ async def draw_text_level(user, IDraw, fonts, my_top):
         )
         IDraw.text(
             (370, 124),
-            f"#{top}",
+            top,
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
@@ -328,7 +328,7 @@ async def draw_text_level(user, IDraw, fonts, my_top):
         )
         IDraw.text(
             (390, 124),
-            f"#{top}",
+            top,
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
@@ -341,7 +341,7 @@ async def draw_text_level(user, IDraw, fonts, my_top):
         )
         IDraw.text(
             (420, 124),
-            f"#{top}",
+            top,
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
