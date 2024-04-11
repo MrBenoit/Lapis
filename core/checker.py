@@ -158,7 +158,7 @@ async def getRankCard(member: disnake.Member) -> disnake.File:
     ]
 
     color = [
-        (181, 181, 181),
+        (55, 64, 92),
     ][user[0].select_card]
     total_score = 5 * (user[0].level ** 2) + (50 * user[0].level) + 100
 
