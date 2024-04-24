@@ -8,7 +8,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 
-from core import *
+from core.checker import *
 
 
 async def CurrencyLeaderboard(user, users_top_list) -> disnake.Embed:
@@ -81,10 +81,10 @@ class Leaderboard(commands.Cog):
     @commands.slash_command(description="Ваша карточка рейтинга")
     async def lb(
         self,
-        interaction: disnake.ApplicationCommandInteraction,
+        interaction: disnake.UserCommandInteraction,
         lbType: str = commands.Param(name="таблица", choices=SELECT),
     ) -> None:
-        if await defaultMemberChecker(interaction, interaction.author) is False:
+        if interaction.author.bot or not interaction.guild:
             return
 
         db = await database(interaction.author)

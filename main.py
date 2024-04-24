@@ -3,16 +3,14 @@ import os
 import traceback
 import disnake
 from dotenv import load_dotenv
+from disnake.ext.commands import InteractionBot
 
-from overwritten import LapisBot
 
 load_dotenv()
 
-# locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
-
 
 def main() -> None:
-    bot = LapisBot(
+    bot = InteractionBot(
         intents=disnake.Intents.all(),
         owner_id=1004649810323845142,
         allowed_mentions=disnake.AllowedMentions(
@@ -32,9 +30,7 @@ def main() -> None:
         "extensions/eco/Casino/",
         "extensions/settings",
         "extensions/eco",
-        "extensions/moderation",
         "extensions/report_system",
-        "extensions/music",
         "extensions",
     ]
 

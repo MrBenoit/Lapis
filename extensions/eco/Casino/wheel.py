@@ -10,7 +10,7 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
+from core.checker import *
 
 
 class Wheel(commands.Cog):
@@ -20,10 +20,10 @@ class Wheel(commands.Cog):
     @commands.slash_command(description="Колесо удачи")
     async def wheel(
         self,
-        interaction: disnake.ApplicationCommandInteraction,
+        interaction: disnake.UserCommandInteraction,
         amount: int = commands.Param(name="ставка"),
     ):
-        if await defaultMemberChecker(interaction, interaction.author) is False:
+        if interaction.author.bot or not interaction.guild:
             return
 
         author = interaction.author
@@ -31,14 +31,12 @@ class Wheel(commands.Cog):
         authorDB = await database(author)
 
         if amount <= 99:
-            embed = await accessDeniedCustom(
-                f"Ставки меньше **100** {EmbedEmoji.SILVER_COIN.value} не принимаются"
-            )
+            embed = await min_value_100()
             await interaction.send(embed=embed, ephemeral=True)
             return
 
         if authorDB[0].currency < amount:
-            embed = await accessDeniedNoMoney(amount, authorDB[0])
+            embed = await accessDeniedNoMoney(amount, authorDB)
             await interaction.send(embed=embed, ephemeral=True)
             return
 

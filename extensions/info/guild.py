@@ -17,8 +17,8 @@ class GuildInfo(commands.Cog):
         self.bot = bot
 
     @commands.slash_command(description="Информация о сервере", name="guild-info")
-    async def guild_info(self, interaction: disnake.ApplicationCommandInteraction):
-        if await defaultMemberChecker(interaction, interaction.author) is False:
+    async def guild_info(self, interaction: disnake.UserCommandInteraction):
+        if not interaction.author.bot or interaction.guild:
             return
 
         guild = interaction.guild

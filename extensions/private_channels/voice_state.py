@@ -8,7 +8,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import array
 
-from core import *
+from core.checker import *
 
 
 class PrivateChannel(commands.Cog):

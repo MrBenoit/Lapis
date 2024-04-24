@@ -238,7 +238,7 @@ class Settings(commands.Cog):
 
     @commands.slash_command(description="Управление доп. функциями")
     async def settings(self, interaction: disnake.GuildCommandInteraction):
-        if await defaultMemberChecker(interaction, interaction.author) is False:
+        if interaction.author.bot or not interaction.guild:
             return
 
         db = await database(interaction.author)

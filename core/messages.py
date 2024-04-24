@@ -1,11 +1,12 @@
 import asyncpg
 import disnake
+from disnake import TextInputStyle, Embed
 
 from core.vars import *
 
 
 async def maxLevel():
-    embed = disnake.Embed(
+    embed = Embed(
         title="Вы достигли максимального уровня", color=EmbedColor.MAIN_COLOR.value
     )
     return embed
@@ -20,7 +21,7 @@ async def banWords(message: str):
 
 
 async def accessDeniedCustom(description: str):
-    embed = disnake.Embed(
+    embed = Embed(
         title=f"{EmbedEmoji.ACCESS_DENIED.value} Отказано в доступе",
         description=description,
         color=EmbedColor.ACCESS_DENIED.value,
@@ -28,8 +29,8 @@ async def accessDeniedCustom(description: str):
     return embed
 
 
-async def accessDeniedNoMoney(amount: int, authorQueryDBUsers: asyncpg.Record):
-    embed = await accessDeniedCustom("У вас недостаточно серебряных монет.")
+async def accessDeniedNoMoney(amount: int, authorQueryDBUsers):
+    embed = await accessDeniedCustom("У вас недостаточно серебряных монет")
     embed.add_field(
         name="Баланс",
         value=f"{authorQueryDBUsers.currency:,}{EmbedEmoji.SILVER_COIN.value}",
@@ -44,11 +45,7 @@ async def accessDeniedNoMoney(amount: int, authorQueryDBUsers: asyncpg.Record):
 
 
 async def accessDeniedButton(buttonAuthor: disnake.Member):
-    embed = disnake.Embed(
-        title=f"{EmbedEmoji.ACCESS_DENIED.value} Отказано в доступе",
-        description="Вы не можете использовать эту кнопку",
-        color=EmbedColor.ACCESS_DENIED.value,
-    )
+    embed = await accessDeniedCustom("Вы не можете использовать эту кнопку")
     embed.add_field(
         name="> Владелец кнопки", value=f"<@{buttonAuthor.id}>", inline=True
     )
@@ -56,10 +53,11 @@ async def accessDeniedButton(buttonAuthor: disnake.Member):
 
 
 async def accessDeniedNotOwner(guildOwner: disnake.Member):
-    embed = disnake.Embed(
-        title=f"{EmbedEmoji.ACCESS_DENIED.value} Отказано в доступе",
-        description="Вы не являетесь владельцем этой гильдии",
-        color=EmbedColor.ACCESS_DENIED.value,
-    )
-    embed.add_field(name="> Владелец гильдии", value=f"<@{guildOwner.id}>", inline=True)
+    embed = await accessDeniedCustom("Вы не являетесь владельцем этого сервера")
+    embed.add_field(name="> Владелец сервера", value=f"<@{guildOwner.id}>", inline=True)
+    return embed
+
+
+async def min_value_100():
+    embed = await accessDeniedCustom("Значение не должно быть меньше **100**")
     return embed

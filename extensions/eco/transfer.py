@@ -8,7 +8,7 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
+from core.checker import *
 
 
 class TransferModal(disnake.ui.Modal):
@@ -48,7 +48,7 @@ class TransferModal(disnake.ui.Modal):
             )
             embed.add_field(
                 name="Полученный тип данных",
-                value=f"`{type(interaction.text_values['m_transfer_silver_coin'])}` *Строка*",
+                value=f"`{type(interaction.text_values['m_transfer_silver_coin'])}`",
                 inline=True,
             )
             await interaction.send(embed=embed, ephemeral=True, delete_after=15)
@@ -127,16 +127,14 @@ class Transfer(commands.Cog):
 
     @commands.user_command(name="Перевод монет")
     async def transfer(
-        self, interaction: disnake.ApplicationCommandInteraction, member: disnake.Member
+        self, interaction: disnake.UserCommandInteraction, member: disnake.Member
     ):
-        if await defaultMemberChecker(interaction, interaction.author) is False:
-            return
-
         author = interaction.author
 
-        if member.bot:
-            embed = await accessDeniedCustom("Вы не можете переводить монеты боту")
-            await interaction.send(embed=embed, ephemeral=True, delete_after=15)
+        if member.bot or not member.guild:
+            return
+
+        if interaction.author.bot or not interaction.guild:
             return
 
         elif member.id == author.id:

@@ -12,7 +12,7 @@ class QRGenerator(commands.Cog):
     @commands.slash_command(description="Создание QR кода")
     async def qr_generator(
         self,
-        interaction: disnake.ApplicationCommandInteraction,
+        interaction: disnake.UserCommandInteraction,
         url: str = commands.Param(name="ссылка"),
     ):
         filename = f"{url}.png"

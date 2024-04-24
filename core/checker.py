@@ -16,18 +16,6 @@ from core.messages import *
 from core.vars import *
 
 
-async def defaultMemberChecker(interaction, member) -> bool:
-    if member.bot:
-        return False
-
-    if not member.guild or not interaction.author.guild:
-        return False
-
-    if not interaction.channel.permissions_for(interaction.author).send_messages:
-        return False
-    return True
-
-
 async def database(member: disnake.Member):
     """
     return:
@@ -46,7 +34,7 @@ async def database(member: disnake.Member):
     return [user, guild, globalUser]
 
 
-async def levelUpChannel(guild: disnake.Guild) -> int | None:
+async def levelUpChannel(guild: disnake.Guild):
     async with AsyncSession(engine) as session:
         channel_id = await session.scalar(
             select(Guilds.level_up_channel).where(Guilds.guild_id == guild.id)
@@ -137,24 +125,20 @@ async def globalUsersDB(member: disnake.Member):
     return userGlobal
 
 
-async def getRankCard(member: disnake.Member) -> disnake.File:
-    user = await database(member)
-
+async def getRankCard(member: disnake.Member, user) -> disnake.File:
     font = {
         "nunitoLightSmallText": ImageFont.truetype(
-            "../LapisBot/fonts/Nunito-Light.ttf", 25
+            "../Lapis/fonts/Nunito-Light.ttf", 25
         ),
         "nunitoLightLevelTop": ImageFont.truetype(
-            "../LapisBot/fonts/Nunito-Light.ttf", 55
+            "../Lapis/fonts/Nunito-Light.ttf", 55
         ),
-        "nunitoLightScore": ImageFont.truetype(
-            "../LapisBot/fonts/Nunito-Light.ttf", 25
-        ),
-        "nunitoLightName": ImageFont.truetype("../LapisBot/fonts/Nunito-Light.ttf", 48),
+        "nunitoLightScore": ImageFont.truetype("../Lapis/fonts/Nunito-Light.ttf", 25),
+        "nunitoLightName": ImageFont.truetype("../Lapis/fonts/Nunito-Light.ttf", 48),
     }
 
     card_images = [
-        "../LapisBot/images/banners/rank_card.png",
+        "../Lapis/images/banners/rank_card.png",
     ]
 
     color = [
@@ -225,7 +209,7 @@ async def draw_avatar(image, member: disnake.Member):
 
 
 async def draw_micro(user, IDraw, fonts, image):
-    micro = Image.open("../LapisBot/images/icons/micro.png").convert("RGBA")
+    micro = Image.open("../Lapis/images/icons/micro.png").convert("RGBA")
     micro = micro.resize((20, 18))
     mask = micro.split()[3]
     hours = user.all_voice_time // 3600
@@ -291,7 +275,7 @@ async def draw_score_bar(user, total_score: int, color, IDraw):
 async def draw_xp_score(user, IDraw, fonts, total_score):
     xp_number = f"{user.exp} / {total_score}"
     return IDraw.text(
-        (560, 149),
+        (560, 150),
         xp_number,
         font=fonts["nunitoLightScore"],
         anchor="mm",

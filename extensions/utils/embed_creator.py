@@ -11,7 +11,7 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
+from core.checker import *
 
 
 async def save_embed_dict(embed: disnake.Embed, author: disnake.Member):
@@ -753,8 +753,8 @@ class EmbedCreatorMain(commands.Cog):
         name="create-embed",
         description="Конструктор эмбедов, которые ты можешь сохранить или " "отправить",
     )
-    async def create_embed(self, interaction: disnake.ApplicationCommandInteraction):
-        if await defaultMemberChecker(interaction, interaction.author) is False:
+    async def create_embed(self, interaction: disnake.UserCommandInteraction):
+        if interaction.author.bot or not interaction.guild:
             return
 
         db = await database(interaction.author)
@@ -775,7 +775,7 @@ class EmbedCreatorMain(commands.Cog):
             await session.commit()
 
         self.save_embed = embed.to_dict()
-        await interaction.send(
+        await interaction.channel.send(
             content=text.embed_text,
             embed=embed,
             view=EmbedCreator(interaction.author),

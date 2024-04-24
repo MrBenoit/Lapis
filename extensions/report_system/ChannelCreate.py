@@ -9,7 +9,7 @@ from sqlalchemy import update, ARRAY
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import array
 
-from core import *
+from core.checker import *
 
 
 class CloseTicketButtons(disnake.ui.View):

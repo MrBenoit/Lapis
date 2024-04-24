@@ -10,7 +10,7 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
+from core.checker import *
 
 
 class Slot(commands.Cog):
@@ -20,30 +20,23 @@ class Slot(commands.Cog):
     @commands.slash_command(description="Игровой автомат")
     async def slot(
         self,
-        interaction: disnake.ApplicationCommandInteraction,
+        interaction: disnake.UserCommandInteraction,
         amount: int = commands.Param(name="ставка"),
     ):
-        if await defaultMemberChecker(interaction, interaction.author) is False:
+        if interaction.author.bot or not interaction.guild:
             return
 
         author = interaction.author
+
         authorDB = await database(author)
 
         if amount <= 99:
-            embed = disnake.Embed(
-                title=f"{EmbedEmoji.ACCESS_DENIED.value} Действие невозможно",
-                description="Значение не должно быть меньше **100**",
-                color=EmbedColor.ACCESS_DENIED.value,
-            )
+            embed = await min_value_100()
             await interaction.send(embed=embed, ephemeral=True)
             return
 
         if authorDB[0].currency < amount:
-            embed = disnake.Embed(
-                title=f"{EmbedEmoji.ACCESS_DENIED.value} Действие невозможно",
-                description=f"У вас недостаточно серебренных монет \n Пополните счет на **{amount - authorDB[0].currency:,} {EmbedEmoji.SILVER_COIN.value}**",
-                color=EmbedColor.ACCESS_DENIED.value,
-            )
+            embed = await accessDeniedNoMoney(amount, authorDB)
             await interaction.send(embed=embed, ephemeral=True)
             return
 
@@ -181,7 +174,6 @@ class Slot(commands.Cog):
             )
             await interaction.send(embed=embed, ephemeral=True)
             return
-        return
 
 
 def setup(bot):

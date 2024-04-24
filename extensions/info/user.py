@@ -8,17 +8,18 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
+from core.checker import *
 
 import datetime
 
 
+def format_url(url: str, prefix: str):
+    return f"[{url.replace(prefix, '')}]({url})" if url != prefix else None
+
+
 async def userinfo(member: disnake.Member) -> disnake.Embed:
     db = await database(member)
-    file = await getRankCard(member.guild, member)
-
-    def format_url(url: str, prefix: str):
-        return f"[{url.replace(prefix, '')}]({url})" if url != prefix else None
+    file = await getRankCard(member)
 
     vk_url = format_url(db[2].vk_url, "https://vk.com/")
     inst_url = format_url(db[2].inst_url, "https://www.instagram.com/")
@@ -336,14 +337,15 @@ class UserInfo(commands.Cog):
 
     @commands.user_command(name="Профиль")
     async def profile_popup(
-        self, interaction: disnake.ApplicationCommandInteraction, member: disnake.Member
+        self, interaction: disnake.UserCommandInteraction, member: disnake.Member
     ):
-        if await defaultMemberChecker(interaction, member) is False:
+        if not interaction.guild or interaction.author.bot:
             return
 
+        db = await database(interaction.author)
+
         embed = await userinfo(member)
-        file = await getRankCard(member.guild, member)
-        await database(interaction.author)
+        file = await getRankCard(member, db[0])
         self.member_id = interaction.author.id
         change_user = UserChange(self.bot, interaction.author)
 
@@ -365,10 +367,10 @@ class UserInfo(commands.Cog):
     )
     async def profile_no_popup(
         self,
-        interaction: disnake.ApplicationCommandInteraction,
+        interaction: disnake.UserCommandInteraction,
         member: disnake.Member = commands.Param(name="пользователь", default=None),
     ):
-        if await defaultMemberChecker(interaction, member) is False:
+        if not interaction.guild or interaction.author.bot:
             return
 
         target = member
@@ -376,15 +378,15 @@ class UserInfo(commands.Cog):
             target = interaction.author
 
         embed = await userinfo(target)
-        file = await getRankCard(member.guild, member)
-        await database(target)
+        db = await database(target)
+        file = await getRankCard(member, db[0])
+
         self.member_id = target.id
-        change_user = UserChange(self.bot, target)
 
         if target.id is member.id:
             await interaction.send(
                 embed=embed,
-                view=change_user,
+                view=UserChange(self.bot, target),
                 ephemeral=False,
                 delete_after=300,
             )

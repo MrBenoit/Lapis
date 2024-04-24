@@ -1,4 +1,5 @@
 import disnake
+import datetime
 from disnake.ext import commands
 
 from sqlalchemy import select, delete
@@ -7,8 +8,7 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
-import datetime
+from core.checker import *
 
 
 class ExpAdder(commands.Cog):

@@ -9,7 +9,7 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
+from core.checker import *
 
 
 class VoiceStats(commands.Cog):
@@ -20,9 +20,9 @@ class VoiceStats(commands.Cog):
     @tasks.loop(minutes=10)
     async def voiceStats(self):
         async with AsyncSession(engine) as session:
-            database = await session.scalars(select(Guilds))
+            db = await session.scalars(select(Guilds))
 
-        for DBrow in database:
+        for DBrow in db:
             guild_id = DBrow.guild_id
 
             if self.bot.get_guild(guild_id) is not disnake.Guild:

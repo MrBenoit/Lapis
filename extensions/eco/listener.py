@@ -1,5 +1,6 @@
 import disnake
 from disnake.ext import commands
+import datetime
 
 from sqlalchemy import select, delete
 from sqlalchemy import and_
@@ -7,8 +8,7 @@ from sqlalchemy import insert
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core import *
-import datetime
+from core.checker import *
 
 
 class CurrencyAdder(commands.Cog):
@@ -29,13 +29,13 @@ class CurrencyAdder(commands.Cog):
         if not guild:
             return
 
-        await database(author)
+        db = await database(author)
 
         async with AsyncSession(engine) as session:
             await session.execute(
                 update(Users)
                 .where(and_(Users.user_id == author.id, Users.guild_id == guild.id))
-                .values(currency=Users.currency + 1)
+                .values(currency=db[0].currency + 1)
             )
             await session.commit()
 

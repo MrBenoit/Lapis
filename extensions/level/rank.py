@@ -11,17 +11,19 @@ class Rank(commands.Cog):
     @commands.slash_command(description="Ваша карточка рейтинга")
     async def rank(
         self,
-        interaction: disnake.ApplicationCommandInteraction,
+        interaction: disnake.UserCommandInteraction,
         member: disnake.Member = commands.Param(name="пользователь", default=None),
     ) -> None:
         target = member
         if member is None:
             target = interaction.author
 
-        if await defaultMemberChecker(interaction=interaction, member=target) is False:
+        if target.bot or not target.guild:
             return
 
-        file = await getRankCard(member=target)
+        db = await database(target)
+
+        file = await getRankCard(target, db[0])
         await interaction.response.send_message(file=file)
 
 
