@@ -1,6 +1,7 @@
 import disnake
-from disnake import TextInputStyle, MessageInteraction
+from disnake import TextInputStyle, MessageInteraction, Embed
 from disnake.ext import commands
+from disnake.ui import TextInput, button, View
 
 from sqlalchemy import select
 from sqlalchemy import and_
@@ -13,28 +14,23 @@ from core.checker import *
 import datetime
 
 
-def format_url(url: str, prefix: str):
-    return f"[{url.replace(prefix, '')}]({url})" if url != prefix else None
+async def userinfo(member: disnake.Member, file: disnake.File) -> disnake.Embed:
+    memberDB = await database(member)
 
-
-async def userinfo(member: disnake.Member) -> disnake.Embed:
-    db = await database(member)
-    file = await getRankCard(member)
-
-    vk_url = format_url(db[2].vk_url, "https://vk.com/")
-    inst_url = format_url(db[2].inst_url, "https://www.instagram.com/")
-    tg_url = format_url(db[2].tg_url, "https://t.me/")
-    description = db[2].description[:256]
-    currency = f"{db[0].currency:,}"
-    donate = f"{db[2].donate:,}"
-    voice_seconds = str(datetime.timedelta(seconds=int(db[0].all_voice_time)))
+    vk_url = format_url(memberDB[2].vk_url, "https://vk.com/")
+    inst_url = format_url(memberDB[2].inst_url, "https://www.instagram.com/")
+    tg_url = format_url(memberDB[2].tg_url, "https://t.me/")
+    description = memberDB[2].description[:256]
+    currency = f"{memberDB[0].currency:,}"
+    donate = f"{memberDB[2].donate:,}"
+    voice_seconds = str(datetime.timedelta(seconds=int(memberDB[0].all_voice_time)))
 
     if member.avatar:
         icon_url = member.avatar
     else:
         icon_url = None
 
-    embed = disnake.Embed(description=member.mention, color=EmbedColor.MAIN_COLOR.value)
+    embed = Embed(description=member.mention, color=EmbedColor.MAIN_COLOR.value)
     embed.set_author(
         name=member.name,
         icon_url=icon_url,
@@ -77,141 +73,133 @@ async def userinfo(member: disnake.Member) -> disnake.Embed:
     return embed
 
 
-class AboutMeModal(disnake.ui.Modal):
-    def __init__(self, bot):
-        self.bot = bot
-        components = [
-            disnake.ui.TextInput(
-                label='Статус"',
-                placeholder="Напишите что-нибудь",
-                custom_id="m_about",
-                max_length=256,
-                style=TextInputStyle.long,
-                required=True,
-            )
-        ]
-        super().__init__(title="Изменение профиля", components=components, timeout=3600)
+class UserChange(disnake.ui.View):
+    def __init__(self, buttonAuthor: disnake.Member):
+        super().__init__(timeout=None)
+        self.buttonAuthor = buttonAuthor
+        self.message = None
 
-    async def callback(self, interaction: disnake.ModalInteraction):
-        m_about = str(interaction.text_values["m_about"])
-        if await banWords(m_about) is True:
-            await interaction.response.send_message(
-                f"{EmbedEmoji.ACCESS_DENIED.value} В профиле запрещено использовать мат",
-                ephemeral=True,
-            )
-            return
+    async def interaction_check(self, interaction: MessageInteraction) -> bool:
+        if self.buttonAuthor.id != interaction.author.id:
+            embed = await accessDeniedButton(self.buttonAuthor)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return False
+        return True
 
-        async with AsyncSession(engine) as session:
-            await session.execute(
-                update(User_global)
-                .where(User_global.user_id == interaction.author.id)
-                .values(description=m_about)
-            )
-            await session.commit()
+    @button(
+        label="Изменить статус", style=disnake.ButtonStyle.secondary, emoji="📃", row=1
+    )
+    async def change_status(
+        self, ui_button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        await interaction.response.send_modal(
+            title="Управление профилем",
+            custom_id="u_profile_changed_desc",
+            components=[
+                TextInput(
+                    label='Статус"',
+                    placeholder="Напишите что-нибудь",
+                    custom_id="m_about",
+                    max_length=256,
+                    style=TextInputStyle.long,
+                    required=True,
+                )
+            ]
+        )
 
-        embed = await userinfo(interaction.author)
-        await interaction.response.edit_message(embed=embed)
-        return
+    @button(
+        label="Изменить карточку рейтинга",
+        style=disnake.ButtonStyle.secondary,
+        emoji="🎆",
+        row=1,
+    )
+    async def change_rank_card(
+        self, ui_button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        user_global = await database(interaction.author)
+        select_view = View()
+        message = interaction.message
+        select_view.add_item(RankCardSelect(user_global[2], message))
 
+        await interaction.response.send_message(
+            view=select_view, ephemeral=True, delete_after=30
+        )
 
-class VKModal(disnake.ui.Modal):
-    def __init__(self, bot):
-        self.bot = bot
-        components = [
-            disnake.ui.TextInput(
-                label="Ссылка на ВК",
-                placeholder="Укажите ваш тег без @ и ссылок",
-                custom_id="m_vk_url",
-                max_length=32,
-                style=TextInputStyle.short,
-                required=True,
-            )
-        ]
-        super().__init__(title="Изменение профиля", components=components, timeout=3600)
+    @button(
+        label="Редактировать ссылку на VK",
+        style=disnake.ButtonStyle.secondary,
+        emoji=EmbedEmoji.VK_ICON.value,
+        row=2,
+    )
+    async def change_url_vk(
+        self, ui_button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        await interaction.response.send_modal(
+            title="Управление профилем",
+            custom_id="u_profile_changed_vk_url",
+            components=[
+                TextInput(
+                    label="Ссылка на ВК",
+                    placeholder="Укажите ваш тег без @ и ссылок",
+                    custom_id="m_vk_url",
+                    max_length=32,
+                    style=TextInputStyle.short,
+                    required=True,
+                )
+            ]
+        )
 
-    async def callback(self, interaction: disnake.ModalInteraction):
-        m_vk_url = str(interaction.text_values["m_vk_url"])
+    @button(
+        label="Редактировать ссылку на Instagram",
+        style=disnake.ButtonStyle.secondary,
+        emoji=EmbedEmoji.INST_ICON.value,
+        row=2,
+    )
+    async def change_url_inst(
+        self, ui_button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        await interaction.response.send_modal(
+            title="Управление профилем",
+            custom_id="u_profile_changed_inst_url",
+            components=[
+                TextInput(
+                    label="Ссылка на Instagram",
+                    placeholder="Укажите ваш тег без @ и ссылок",
+                    custom_id="m_inst_url",
+                    max_length=32,
+                    style=TextInputStyle.short,
+                    required=True,
+                )
+            ]
+        )
 
-        async with AsyncSession(engine) as session:
-            stmt = (
-                update(User_global)
-                .where(User_global.user_id == interaction.author.id)
-                .values(vk_url=f"https://vk.com/{m_vk_url}")
-            )
-            await session.execute(stmt)
-            await session.commit()
-
-        embed = await userinfo(interaction.author)
-        await interaction.response.edit_message(embed=embed)
-        return
-
-
-class InstModal(disnake.ui.Modal):
-    def __init__(self, bot):
-        self.bot = bot
-        components = [
-            disnake.ui.TextInput(
-                label="Ссылка на Instagram",
-                placeholder="Укажите ваш тег без @ и ссылок",
-                custom_id="m_inst_url",
-                max_length=32,
-                style=TextInputStyle.short,
-                required=True,
-            )
-        ]
-        super().__init__(title="Изменение профиля", components=components, timeout=3600)
-
-    async def callback(self, interaction: disnake.ModalInteraction):
-        m_inst_url = str(interaction.text_values["m_inst_url"])
-
-        async with AsyncSession(engine) as session:
-            await session.execute(
-                update(User_global)
-                .where(User_global.user_id == interaction.author.id)
-                .values(inst_url=f"https://www.instagram.com/{m_inst_url}")
-            )
-            await session.commit()
-
-        embed = await userinfo(interaction.author)
-        await interaction.response.edit_message(embed=embed)
-        return
-
-
-class TgModal(disnake.ui.Modal):
-    def __init__(self, bot):
-        self.bot = bot
-
-        components = [
-            disnake.ui.TextInput(
-                label="Ссылка на Telegram",
-                placeholder="Укажите ваш тег без @ и ссылок",
-                custom_id="m_tg_url",
-                max_length=32,
-                style=TextInputStyle.short,
-                required=True,
-            )
-        ]
-        super().__init__(title="Изменение профиля", components=components, timeout=3600)
-
-    async def callback(self, interaction: disnake.ModalInteraction):
-        m_tg_url = str(interaction.text_values["m_tg_url"])
-
-        async with AsyncSession(engine) as session:
-            await session.execute(
-                update(User_global)
-                .where(User_global.user_id == interaction.author.id)
-                .values(tg_url=f"https://t.me/{m_tg_url}")
-            )
-            await session.commit()
-
-        embed = await userinfo(interaction.author)
-        await interaction.response.edit_message(embed=embed)
-        return
+    @button(
+        label="Редактировать ссылку на Telegram",
+        style=disnake.ButtonStyle.secondary,
+        emoji=EmbedEmoji.TG_ICON.value,
+        row=2,
+    )
+    async def change_url_tg(
+        self, ui_button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        await interaction.response.send_modal(
+            title="Управление профилем",
+            custom_id="u_profile_changed_tg_url",
+            components=[
+                TextInput(
+                    label="Ссылка на Telegram",
+                    placeholder="Укажите ваш тег без @ и ссылок",
+                    custom_id="m_tg_url",
+                    max_length=32,
+                    style=TextInputStyle.short,
+                    required=True,
+                )
+            ]
+        )
 
 
 class RankCardSelect(disnake.ui.StringSelect):
-    def __init__(self, bot, user_global, message):
-        self.bot = bot
+    def __init__(self, user_global, message):
         self.message = message
 
         options = []
@@ -251,103 +239,30 @@ class RankCardSelect(disnake.ui.StringSelect):
         await interaction.delete_original_response(delay=10)
 
         org_message = self.message
-        embed = await userinfo(interaction.author)
+        file = await getRankCard(interaction.author)
+        embed = await userinfo(interaction.author, file)
         await org_message.edit(embed=embed)
-
-
-class UserChange(disnake.ui.View):
-    def __init__(self, bot, buttonAuthor: disnake.Member):
-        super().__init__(timeout=None)
-        self.bot = bot
-        self.buttonAuthor = buttonAuthor
-        self.message = None
-
-    async def interaction_check(self, interaction: MessageInteraction) -> bool:
-        if self.buttonAuthor.id != interaction.author.id:
-            embed = await accessDeniedButton(self.buttonAuthor)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return False
-        return True
-
-    @disnake.ui.button(
-        label="Изменить статус", style=disnake.ButtonStyle.secondary, emoji="📃", row=1
-    )
-    async def change_status(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        await interaction.response.send_modal(modal=AboutMeModal(self.bot))
-
-    @disnake.ui.button(
-        label="Изменить карточку рейтинга",
-        style=disnake.ButtonStyle.secondary,
-        emoji="🎆",
-        row=1,
-    )
-    async def change_rank_card(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        user_global = await database(interaction.author)
-        select_view = disnake.ui.View()
-        message = interaction.message
-        select_view.add_item(RankCardSelect(self.bot, user_global[2], message))
-
-        await interaction.response.send_message(
-            view=select_view, ephemeral=True, delete_after=30
-        )
-
-    @disnake.ui.button(
-        label="Редактировать ссылку на VK",
-        style=disnake.ButtonStyle.secondary,
-        emoji=EmbedEmoji.VK_ICON.value,
-        row=2,
-    )
-    async def change_url_vk(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        await interaction.response.send_modal(modal=VKModal(self.bot))
-
-    @disnake.ui.button(
-        label="Редактировать ссылку на Instagram",
-        style=disnake.ButtonStyle.secondary,
-        emoji=EmbedEmoji.INST_ICON.value,
-        row=2,
-    )
-    async def change_url_inst(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        await interaction.response.send_modal(modal=InstModal(self.bot))
-
-    @disnake.ui.button(
-        label="Редактировать ссылку на Telegram",
-        style=disnake.ButtonStyle.secondary,
-        emoji=EmbedEmoji.TG_ICON.value,
-        row=2,
-    )
-    async def change_url_tg(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        await interaction.response.send_modal(modal=TgModal(self.bot))
 
 
 class UserInfo(commands.Cog):
     def __init__(self, bot) -> None:
         self.message = None
         self.bot = bot
-        self.member_id = int
 
     @commands.user_command(name="Профиль")
     async def profile_popup(
         self, interaction: disnake.UserCommandInteraction, member: disnake.Member
     ):
+        await interaction.response.defer()
+
         if not interaction.guild or interaction.author.bot:
             return
 
-        db = await database(interaction.author)
+        await database(interaction.author)
 
-        embed = await userinfo(member)
-        file = await getRankCard(member, db[0])
-        self.member_id = interaction.author.id
-        change_user = UserChange(self.bot, interaction.author)
+        file = await getRankCard(member)
+        embed = await userinfo(member, file)
+        change_user = UserChange(interaction.author)
 
         if interaction.author.id is member.id:
             await interaction.send(
@@ -358,7 +273,7 @@ class UserInfo(commands.Cog):
             )
             return
 
-        await interaction.response.send_message(
+        await interaction.send(
             file=file, embed=embed, ephemeral=True, delete_after=300
         )
 
@@ -370,29 +285,30 @@ class UserInfo(commands.Cog):
         interaction: disnake.UserCommandInteraction,
         member: disnake.Member = commands.Param(name="пользователь", default=None),
     ):
+        await interaction.response.defer()
+
         if not interaction.guild or interaction.author.bot:
             return
 
-        target = member
-        if not target:
+        if not member:
             target = interaction.author
+        else:
+            target = member
 
-        embed = await userinfo(target)
-        db = await database(target)
-        file = await getRankCard(member, db[0])
+        await database(target)
+        file = await getRankCard(target)
+        embed = await userinfo(target, file)
 
-        self.member_id = target.id
-
-        if target.id is member.id:
+        if member is None or interaction.author is member:
             await interaction.send(
                 embed=embed,
-                view=UserChange(self.bot, target),
+                view=UserChange(target),
                 ephemeral=False,
                 delete_after=300,
             )
             return
 
-        await interaction.response.send_message(
+        await interaction.send(
             file=file, embed=embed, ephemeral=True, delete_after=300
         )
 

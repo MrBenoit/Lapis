@@ -2,6 +2,7 @@ import datetime
 import random
 
 import disnake
+from disnake import Embed
 from disnake.ext import commands
 
 from sqlalchemy import select
@@ -33,14 +34,7 @@ class Coin(commands.Cog):
 
         authorDB = await database(author)
 
-        if amount <= 99:
-            embed = await min_value_100()
-            await interaction.send(embed=embed, ephemeral=True)
-            return
-
-        if authorDB[0].currency < amount:
-            embed = await accessDeniedNoMoney(amount, authorDB)
-            await interaction.send(embed=embed, ephemeral=True)
+        if await amount_checker(amount, authorDB, interaction) is False:
             return
 
         r_coin = random.choice(COIN)
@@ -59,7 +53,7 @@ class Coin(commands.Cog):
                 )
                 await session.commit()
 
-            embed = disnake.Embed(
+            embed = Embed(
                 title=f"Орёл и решка",
                 description=f"<@!{author.id}> выбил **{r_coin}** и ничего не выиграл\n\n"
                 f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"
@@ -84,7 +78,7 @@ class Coin(commands.Cog):
             )
             await session.commit()
 
-        embed = disnake.Embed(
+        embed = Embed(
             title=f"Орёл и решка",
             description=f"<@!{author.id}> выбил **{r_coin}** и получает **{amount * 2:,}** {EmbedEmoji.SILVER_COIN.value}\n\n"
             f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"

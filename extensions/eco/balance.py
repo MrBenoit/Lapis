@@ -1,4 +1,5 @@
 import disnake
+from disnake import Embed
 from disnake.ext import commands
 
 from core.checker import *
@@ -27,15 +28,15 @@ class Balance(commands.Cog):
 
         authorDB = db[0]
         globalAuthorDB = db[2]
-
         premiumTime = "Нет действующей подписки"
+
         if globalAuthorDB.prem_time is not None:
             premiumTime = (
                 f"Закончится в {disnake.utils.format_dt(globalAuthorDB.prem_time, 'F')}, \n"
                 f"{disnake.utils.format_dt(globalAuthorDB.prem_time, 'R')}"
             )
 
-        embed = disnake.Embed(
+        embed = Embed(
             color=EmbedColor.MAIN_COLOR.value,
         )
         embed.set_author(name=target.name, icon_url=target.avatar.url)  # type: ignore

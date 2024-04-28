@@ -14,6 +14,7 @@ class Rank(commands.Cog):
         interaction: disnake.UserCommandInteraction,
         member: disnake.Member = commands.Param(name="пользователь", default=None),
     ) -> None:
+        await interaction.response.defer()
         target = member
         if member is None:
             target = interaction.author
@@ -21,10 +22,9 @@ class Rank(commands.Cog):
         if target.bot or not target.guild:
             return
 
-        db = await database(target)
-
-        file = await getRankCard(target, db[0])
-        await interaction.response.send_message(file=file)
+        await database(target)
+        file = await getRankCard(target)
+        await interaction.send(file=file)
 
 
 def setup(bot):

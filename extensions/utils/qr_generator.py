@@ -1,7 +1,8 @@
 import disnake
+from disnake import File
 from disnake.ext import commands
 import qrcode
-from core import *
+
 from io import BytesIO
 
 
@@ -20,7 +21,7 @@ class QRGenerator(commands.Cog):
 
         buffer = BytesIO()
         img.save(buffer, "png")
-        file = disnake.File(BytesIO(buffer.getvalue()), filename=filename)
+        file = File(BytesIO(buffer.getvalue()), filename=filename)
 
         await interaction.send(file=file, ephemeral=True)
 

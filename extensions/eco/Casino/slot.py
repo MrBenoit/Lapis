@@ -2,6 +2,7 @@ import datetime
 import random
 
 import disnake
+from disnake import Embed
 from disnake.ext import commands
 
 from sqlalchemy import select
@@ -27,17 +28,9 @@ class Slot(commands.Cog):
             return
 
         author = interaction.author
-
         authorDB = await database(author)
 
-        if amount <= 99:
-            embed = await min_value_100()
-            await interaction.send(embed=embed, ephemeral=True)
-            return
-
-        if authorDB[0].currency < amount:
-            embed = await accessDeniedNoMoney(amount, authorDB)
-            await interaction.send(embed=embed, ephemeral=True)
+        if await amount_checker(amount, authorDB, interaction) is False:
             return
 
         slot1, slot2, slot3 = (
@@ -60,7 +53,7 @@ class Slot(commands.Cog):
                 )
                 await session.commit()
 
-            embed = disnake.Embed(
+            embed = Embed(
                 title="🎉 Выигрыш есть, можно поесть! 🎉",
                 description=f"<@{author.id}> выбивает {slot1}{slot2}{slot3}и выигрывает **{round(amount * 4):,}** {EmbedEmoji.SILVER_COIN.value}\n\n"
                 f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"
@@ -86,7 +79,7 @@ class Slot(commands.Cog):
                 )
                 await session.commit()
 
-            embed = disnake.Embed(
+            embed = Embed(
                 title="🎉 Выигрыш есть, можно поесть! 🎉",
                 description=f"<@{author.id}> выбивает {slot1}{slot2}{slot3} и выигрывает **{round(amount * 10):,}** {EmbedEmoji.SILVER_COIN.value}\n\n"
                 f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"
@@ -113,7 +106,7 @@ class Slot(commands.Cog):
                 )
                 await session.commit()
 
-            embed = disnake.Embed(
+            embed = Embed(
                 title="🎉 Выигрыш есть, можно поесть! 🎉",
                 description=f"<@{author.id}> выбивает {slot1}{slot2}{slot3} и выигрывает **{round(amount * 50):,}** {EmbedEmoji.SILVER_COIN.value}\n\n"
                 f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"
@@ -139,7 +132,7 @@ class Slot(commands.Cog):
                 )
                 await session.commit()
 
-            embed = disnake.Embed(
+            embed = Embed(
                 title="🎉 Выигрыш есть, можно поесть! 🎉",
                 description=f"<@{author.id}> выбивает {slot1}{slot2}{slot3} и выигрывает **{round(amount * 100):,}** {EmbedEmoji.SILVER_COIN.value}\n\n"
                 f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"
@@ -165,7 +158,7 @@ class Slot(commands.Cog):
                 )
                 await session.commit()
 
-            embed = disnake.Embed(
+            embed = Embed(
                 title="Игровой автомат",
                 description=f"<@{author.id}> выбивает {slot1}{slot2}{slot3} и ничего не выигрывает\n\n"
                 f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"

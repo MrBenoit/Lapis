@@ -29,13 +29,18 @@ class CurrencyAdder(commands.Cog):
         if not guild:
             return
 
-        db = await database(author)
+        await database(author)
 
         async with AsyncSession(engine) as session:
             await session.execute(
                 update(Users)
-                .where(and_(Users.user_id == author.id, Users.guild_id == guild.id))
-                .values(currency=db[0].currency + 1)
+                .where(
+                    and_(
+                        Users.user_id == author.id,
+                        Users.guild_id == guild.id
+                    )
+                )
+                .values(currency=Users.currency + 1)
             )
             await session.commit()
 

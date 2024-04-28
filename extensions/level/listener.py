@@ -1,5 +1,6 @@
 import disnake
 import datetime
+from disnake import Embed
 from disnake.ext import commands
 
 from sqlalchemy import select, delete
@@ -56,7 +57,7 @@ class ExpAdder(commands.Cog):
                 )
                 await session2.commit()
 
-            embed = disnake.Embed(
+            embed = Embed(
                 title=f"{guild.name}",
                 description=f"Ты достиг **{db[0].level + 1}-го** уровня",
                 color=EmbedColor.MAIN_COLOR.value,

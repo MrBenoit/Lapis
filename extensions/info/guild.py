@@ -1,4 +1,5 @@
 import disnake
+from disnake import Embed
 from disnake.ext import commands
 
 from sqlalchemy import select
@@ -18,7 +19,7 @@ class GuildInfo(commands.Cog):
 
     @commands.slash_command(description="Информация о сервере", name="guild-info")
     async def guild_info(self, interaction: disnake.UserCommandInteraction):
-        if not interaction.author.bot or interaction.guild:
+        if interaction.author.bot or not interaction.guild:
             return
 
         guild = interaction.guild
@@ -91,21 +92,21 @@ class GuildInfo(commands.Cog):
         if guild.icon is not None:
             icon_url = guild.icon.url
 
-        embed = disnake.Embed(
+        embed = Embed(
             description=f"{guild_desc}",
             color=EmbedColor.MAIN_COLOR.value,
         )
 
-        # if not prem_status[1]:
-        embed.set_author(
-            name=guild_name,
-            icon_url=icon_url,
-        )
-        # else:
-        #     embed.set_author(
-        #         name=f"{guild_name} {EmbedEmoji.GOLD_COIN.value}",
-        #         icon_url=icon_url,
-        #     )
+        if not prem_status[1]:
+            embed.set_author(
+                name=guild_name,
+                icon_url=icon_url,
+            )
+        else:
+            embed.set_author(
+                name=f"{guild_name} {EmbedEmoji.GOLD_COIN.value}",
+                icon_url=icon_url,
+            )
 
         embed.set_footer(text=f"Guild ID - {interaction.guild.id}")
 

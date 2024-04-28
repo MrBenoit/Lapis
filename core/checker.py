@@ -1,4 +1,5 @@
 import json
+import re
 from io import BytesIO
 
 import asyncpg
@@ -6,7 +7,8 @@ import disnake
 import datetime
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from sqlalchemy import and_
+from disnake.ext.commands import CommandInvokeError
+from sqlalchemy import and_, update
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -125,7 +127,64 @@ async def globalUsersDB(member: disnake.Member):
     return userGlobal
 
 
-async def getRankCard(member: disnake.Member, user) -> disnake.File:
+async def amount_checker(amount, authorDB, interaction) -> bool:
+    if amount <= 99:
+        embed = await min_value_100()
+        await interaction.send(embed=embed, ephemeral=True)
+        return False
+
+    if authorDB[0].currency < amount:
+        embed = await accessDeniedNoMoney(amount, authorDB)
+        await interaction.send(embed=embed, ephemeral=True)
+        return False
+
+
+async def private_channel_checker(author: disnake.Member, interaction, user_settngs) -> bool:
+    try:
+        author.voice.channel
+    except AttributeError:
+        embed = await accessDeniedCustom("Вы не находитесь в голосовом канале")
+        await interaction.channel.send(embed=embed, ephemeral=True, delete_after=15)
+        return False
+
+    if user_settngs[0].p_channel_id != author.voice.channel:
+        embed = await accessDeniedCustom(
+            "Вы не находитесь в вашем приватном канале"
+        )
+        await interaction.send(embed=embed, ephemeral=True, delete_after=15)
+        return False
+
+
+def format_url(url: str, prefix: str):
+    return f"[{url.replace(prefix, '')}]({url})" if url != prefix else None
+
+
+async def check_url(text_value: str):
+    url_pattern = r"https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+"
+    urls = re.findall(url_pattern, text_value)
+    if text_value == "":
+        return True
+    if text_value.startswith("https:") or text_value.startswith("http:"):
+        if "." in text_value:
+            return True
+    if urls is not None:
+        return True
+    return False
+
+
+async def save_embed_dict(embed: disnake.Embed, author: disnake.Member):
+    async with AsyncSession(engine) as session:
+        await session.execute(
+            update(User_global)
+            .where(User_global.user_id == author.id)
+            .values(embed_json=json.dumps(embed.to_dict()))
+        )
+        await session.commit()
+
+
+async def getRankCard(member: disnake.Member) -> disnake.File:
+    user = await database(member)
+
     font = {
         "nunitoLightSmallText": ImageFont.truetype(
             "../Lapis/fonts/Nunito-Light.ttf", 25
@@ -142,7 +201,7 @@ async def getRankCard(member: disnake.Member, user) -> disnake.File:
     ]
 
     color = [
-        (55, 64, 92),
+        (181, 181, 181),
     ][user[0].select_card]
     total_score = 5 * (user[0].level ** 2) + (50 * user[0].level) + 100
 
@@ -161,9 +220,9 @@ async def drawing(
     if member.avatar is not None:
         await draw_avatar(image, member)
     await draw_micro(user, IDraw, font, image)
-    await draw_score_bar(user, total_score, color, IDraw)
+    percent = await draw_score_bar(user, total_score, color, IDraw)
     await draw_text_level(user, IDraw, font, user_rank)
-    await draw_xp_score(user, IDraw, font, total_score)
+    await draw_xp_score(user, IDraw, font, percent[1], total_score)
 
     buffer = BytesIO()
     image.save(buffer, "png", optimize=True)
@@ -217,65 +276,71 @@ async def draw_micro(user, IDraw, fonts, image):
     seconds = (user.all_voice_time % 3600) % 60
 
     if user.all_voice_time == 0:
-        image.paste(micro, (755, 102), mask=mask)
+        image.paste(micro, (715, 102), mask=mask)
         IDraw.text(
-            (790, 120),
+            (740, 120),
             f"0:00:00",
             font=fonts["nunitoLightSmallText"],
             anchor="ls",
         )
-    elif 1 <= user.all_voice_time <= 35999:
-        image.paste(micro, (755, 102), mask=mask)
+        return
+    if 1 <= user.all_voice_time <= 35999:
+        image.paste(micro, (715, 102), mask=mask)
         IDraw.text(
-            (790, 120),
+            (740, 120),
             f"{hours}:{minutes}:{seconds}",
             font=fonts["nunitoLightSmallText"],
             anchor="ls",
         )
-    elif 359999 >= user.all_voice_time >= 36000:
-        image.paste(micro, (740, 102), mask=mask)
-        IDraw.text(
-            (765, 120),
-            f"{hours}:{minutes}:{seconds}",
-            font=fonts["nunitoLightSmallText"],
-            anchor="ls",
-        )
-    elif 3599999 >= user.all_voice_time >= 360000:
-        image.paste(micro, (725, 102), mask=mask)
-        IDraw.text(
-            (745, 120),
-            f"{hours}:{minutes}:{seconds}",
-            font=fonts["nunitoLightSmallText"],
-            anchor="ls",
-        )
-    elif 35999999 >= user.all_voice_time >= 3600000:
-        image.paste(micro, (710, 102), mask=mask)
+        return
+    if 359999 >= user.all_voice_time >= 36000:
+        image.paste(micro, (700, 102), mask=mask)
         IDraw.text(
             (725, 120),
             f"{hours}:{minutes}:{seconds}",
             font=fonts["nunitoLightSmallText"],
             anchor="ls",
         )
+        return
+    if 3599999 >= user.all_voice_time >= 360000:
+        image.paste(micro, (685, 102), mask=mask)
+        IDraw.text(
+            (705, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+        return
+    if 35999999 >= user.all_voice_time >= 3600000:
+        image.paste(micro, (670, 102), mask=mask)
+        IDraw.text(
+            (770, 120),
+            f"{hours}:{minutes}:{seconds}",
+            font=fonts["nunitoLightSmallText"],
+            anchor="ls",
+        )
+        return
 
 
 async def draw_score_bar(user, total_score: int, color, IDraw):
     percent = user.exp / total_score
-    pos = round(percent * 660 + 210)
+    pos = round(percent * 620 + 210)
     if pos <= 295:
         return [IDraw.ellipse((210, 130, 250, 169), fill=color), percent]
     else:
         return [
             IDraw.rounded_rectangle(
-                (210, 130, min(pos, 870), 169), width=40, fill=color, radius=40
+                (210, 130, min(pos, 830), 169), width=40, fill=color, radius=40
             ),
             percent,
         ]
 
 
-async def draw_xp_score(user, IDraw, fonts, total_score):
+async def draw_xp_score(user, IDraw, fonts, percent, total_score):
     xp_number = f"{user.exp} / {total_score}"
+    # ({round(percent * 100, 2)}%)
     return IDraw.text(
-        (560, 150),
+        (520, 150),
         xp_number,
         font=fonts["nunitoLightScore"],
         anchor="mm",
@@ -299,7 +364,7 @@ async def draw_text_level(user, IDraw, fonts, my_top):
         )
         IDraw.text(
             (370, 124),
-            top,
+            f"#{top}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
@@ -312,7 +377,7 @@ async def draw_text_level(user, IDraw, fonts, my_top):
         )
         IDraw.text(
             (390, 124),
-            top,
+            f"#{top}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )
@@ -325,7 +390,7 @@ async def draw_text_level(user, IDraw, fonts, my_top):
         )
         IDraw.text(
             (420, 124),
-            top,
+            f"#{top}",
             font=fonts["nunitoLightLevelTop"],
             anchor="ls",
         )

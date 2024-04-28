@@ -2,6 +2,7 @@ import datetime
 import random
 
 import disnake
+from disnake import Embed
 from disnake.ext import commands
 
 from sqlalchemy import select
@@ -30,14 +31,7 @@ class Wheel(commands.Cog):
         choice = random.choice(WHEEL)
         authorDB = await database(author)
 
-        if amount <= 99:
-            embed = await min_value_100()
-            await interaction.send(embed=embed, ephemeral=True)
-            return
-
-        if authorDB[0].currency < amount:
-            embed = await accessDeniedNoMoney(amount, authorDB)
-            await interaction.send(embed=embed, ephemeral=True)
+        if await amount_checker(amount, authorDB, interaction) is False:
             return
 
         async with AsyncSession(engine) as session:
@@ -53,7 +47,7 @@ class Wheel(commands.Cog):
             )
             await session.commit()
 
-        embed = disnake.Embed(
+        embed = Embed(
             title="Колесо удачи",
             description=f"<@{author.id}> выиграл(а) **{round(amount * choice):,}** {EmbedEmoji.SILVER_COIN.value}\n\n"
             f"`Ставка:`**{amount:,}** {EmbedEmoji.SILVER_COIN.value}\n"

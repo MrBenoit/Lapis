@@ -1,4 +1,5 @@
 import disnake
+from disnake import Embed
 from disnake.ext import commands
 
 from sqlalchemy import select, delete, func
@@ -17,7 +18,7 @@ async def CurrencyLeaderboard(user, users_top_list) -> disnake.Embed:
     top_rank = {1: "🥇", 2: "🥈", 3: "🥉"}
     my_top = f"{top_rank.get(my_rank, '#')}{my_rank}"
 
-    embed = disnake.Embed(
+    embed = Embed(
         title="Таблица лидеров по серебреных монетам",
         description=(
             f"Ты: **{my_top}** - <@{user.user_id}> \n"
@@ -48,7 +49,7 @@ async def LevelLeaderboard(user, users_top_list) -> disnake.Embed:
     top_rank = {1: "🥇", 2: "🥈", 3: "🥉"}
     my_top = f"{top_rank.get(my_rank, '#')}{my_rank}"
 
-    embed = disnake.Embed(
+    embed = Embed(
         title="Таблица лидеров по уровню",
         description=(
             f"Ты: **{my_top}** - <@{user.user_id}> \n"

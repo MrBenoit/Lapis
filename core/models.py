@@ -111,3 +111,4 @@ class Guilds(Base):
     report_channel_id: Mapped[int] = mapped_column(BigInteger)
     report_message_id: Mapped[int] = mapped_column(BigInteger)
     report_notif_channel_id: Mapped[int] = mapped_column(BigInteger)
+
