@@ -1,8 +1,6 @@
 .env
 .DS_Store
-/extensions/fun
 /.idea
 /.venv
 /.vscode
 /images
-config.py
