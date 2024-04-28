@@ -65,7 +65,7 @@ class Slot(commands.Cog):
             await interaction.send(embed=embed, ephemeral=True)
             return
 
-        if slot1 == "🍒" and slot2 == "🍒" and slot3 == "🍒":
+        elif slot1 == "🍒" and slot2 == "🍒" and slot3 == "🍒":
             async with AsyncSession(engine) as session:
                 await session.execute(
                     update(Users)
@@ -92,7 +92,7 @@ class Slot(commands.Cog):
             await interaction.send(embed=embed, ephemeral=True)
             return
 
-        if slot1 == "🍇" and slot2 == "🍇" and slot3 == "🍇":
+        elif slot1 == "🍇" and slot2 == "🍇" and slot3 == "🍇":
             async with AsyncSession(engine) as session:
                 await session.execute(
                     update(Users)
@@ -118,7 +118,7 @@ class Slot(commands.Cog):
             await interaction.send(embed=embed, ephemeral=True)
             return
 
-        if slot1 == "💎" and slot2 == "💎" and slot3 == "💎":
+        elif slot1 == "💎" and slot2 == "💎" and slot3 == "💎":
             async with AsyncSession(engine) as session:
                 await session.execute(
                     update(Users)
