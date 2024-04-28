@@ -1,5 +1,5 @@
 # Lapis
-## Version - 1.0.1 beta
+## Version - 1.1.0 beta
 ## "You are missing something?"
 
 -------------
