@@ -144,7 +144,7 @@ class Slot(commands.Cog):
             await interaction.send(embed=embed, ephemeral=True)
             return
 
-        if slot1 and slot2 and slot3 != "🔔🔔🔔" or "🍒🍒🍒" or "🍇🍇🍇" or "💎💎💎":
+        elif slot1 and slot2 and slot3 != "🔔🔔🔔" or "🍒🍒🍒" or "🍇🍇🍇" or "💎💎💎":
             async with AsyncSession(engine) as session:
                 await session.execute(
                     update(Users)

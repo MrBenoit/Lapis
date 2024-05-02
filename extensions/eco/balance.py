@@ -16,9 +16,9 @@ class Balance(commands.Cog):
         member: disnake.Member = commands.Param(name="пользователь", default=None),
     ) -> None:
 
-        target = interaction.author
-
-        if member is not None:
+        if not member:
+            target = interaction.author
+        else:
             target = member
 
         if target.bot or not interaction.guild:

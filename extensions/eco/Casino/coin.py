@@ -31,7 +31,6 @@ class Coin(commands.Cog):
             return
 
         author = interaction.author
-
         authorDB = await database(author)
 
         if await amount_checker(amount, authorDB, interaction) is False:

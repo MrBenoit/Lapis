@@ -89,6 +89,7 @@ class GuildInfo(commands.Cog):
         }
         nsfw_level = nsfw_level_dict[f"{nsfw_level}"]
         icon_url = None
+
         if guild.icon is not None:
             icon_url = guild.icon.url
 
@@ -109,7 +110,6 @@ class GuildInfo(commands.Cog):
             )
 
         embed.set_footer(text=f"Guild ID - {interaction.guild.id}")
-
         embed.add_field(
             name="> Участники",
             value=f"{EmbedEmoji.ALL_MEMBERS.value} Всего: **{members}**\n"
@@ -137,7 +137,6 @@ class GuildInfo(commands.Cog):
             f"{EmbedEmoji.RULES.value} Правила: **{rules_channel}**",
             inline=True,
         )
-
         embed.add_field(
             name="> Nitro boost",
             value=f"{EmbedEmoji.NITRO.value} Уровень: **{boost_level}**\n"
@@ -156,7 +155,6 @@ class GuildInfo(commands.Cog):
             f'{disnake.utils.format_dt(guild.created_at, "R")}',
             inline=True,
         )
-
         embed.add_field(
             name="> Уровень защиты",
             value=f"{EmbedEmoji.PROTECTION.value} {ver_level}",

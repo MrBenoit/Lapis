@@ -14,10 +14,10 @@ class Rank(commands.Cog):
         interaction: disnake.UserCommandInteraction,
         member: disnake.Member = commands.Param(name="пользователь", default=None),
     ) -> None:
-        await interaction.response.defer()
-        target = member
-        if member is None:
+        if not member:
             target = interaction.author
+        else:
+            target = member
 
         if target.bot or not target.guild:
             return
