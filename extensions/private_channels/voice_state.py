@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import array
 
 from core.checker import *
+from core.models import *
 
 
 class PrivateChannel(commands.Cog):
@@ -48,17 +49,17 @@ class PrivateChannel(commands.Cog):
             except disnake.errors.NotFound:
                 pass
 
-        async def _check_setup_channel() -> bool:
+        def _check_setup_channel() -> bool:
             return before.channel.id in triggerChannel.p_channel_ids
 
-        async def _is_owner() -> bool:
+        def _is_owner() -> bool:
             return before.channel.id == db[0].p_channel_id
 
         async def _new_owner():
             if (
                 not before.channel
-                or await _check_setup_channel()
-                or not await _is_owner()
+                or _check_setup_channel()
+                or not _is_owner()
             ):
                 return
 
